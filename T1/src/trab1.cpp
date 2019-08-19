@@ -8,7 +8,7 @@ using namespace std;
 int main(){
     ifstream inPontos;
 
-    inPontos.open("assets/pontos.txt");
+    inPontos.open("pontos.txt");
 
     if(!inPontos.is_open()){
         cout << "Não foi possível abrir o arquivo texto" << endl;

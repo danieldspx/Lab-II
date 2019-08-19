@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <math.h>
+#include <iomanip>
 
 using namespace std;
 
@@ -42,7 +44,7 @@ int main(){
 
     int contador = 1;
     for(auto& distancia: distancias){
-        printf("Distancia %d %.2lf\n", contador, distancia.calculaDistancia());//Shoter than cout sintax
+      cout << setprecision(2) << "Distancia " << contador << " " << distancia.calculaDistancia() << endl;
         contador++;
     }
 

@@ -1,9 +1,21 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "headers/structs.h"
 
 using namespace std;
+
+struct Coordenates {
+    double x;
+    double y;
+};
+
+struct Distancia {
+    Coordenates firstCoord;
+    Coordenates secondCoord;
+    double calculaDistancia(){
+        return sqrt( pow((firstCoord.x - secondCoord.x), 2) + pow((firstCoord.y - secondCoord.y), 2) );
+    }
+};
 
 int main(){
     ifstream inPontos;

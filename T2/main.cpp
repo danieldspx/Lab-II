@@ -13,11 +13,10 @@ struct Editor {
       linhas.push_back(newLinha);
    }
 
-   std::string remove(void) {
-      std::string linhaReturn = linhas.back();  // pega ultima linha
-      delete linhas.back();
+   char* remove(void) {
+      char* l = linhas.back();  // pega ultima linha
       linhas.pop_back();        // remove ultima linha
-      return linhaReturn;
+      return l;
    }
 
    int tamanho(void) {
@@ -25,8 +24,8 @@ struct Editor {
    }
 
    void destroi(void) {
-      for(auto &linha: linhas){
-          delete linha;
+      for (auto& linha : linhas) {
+         delete linha;
       }
    }
 };  // fim do editor
@@ -43,9 +42,13 @@ int main(int argc, char** argv) {
 
    auto tamanho = editor.tamanho();
    for (auto i = 0; i < tamanho; i++) {
-      linha = editor.remove();
-      std::cout << "DEL: " << linha << std::endl;
+        char *linhaRef = editor.remove();
+        linha = linhaRef;
+        std::cout << "DEL: " << linha << std::endl;
+        delete linhaRef;
    }
+
+   editor.destroi();
 
    return 0;
 }

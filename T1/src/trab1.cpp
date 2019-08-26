@@ -1,14 +1,28 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "headers/structs.h"
+#include <math.h>
+#include <iomanip>
 
 using namespace std;
+
+struct Coordenates {
+    double x;
+    double y;
+};
+
+struct Distancia {
+    Coordenates firstCoord;
+    Coordenates secondCoord;
+    double calculaDistancia(){
+        return sqrt( pow((firstCoord.x - secondCoord.x), 2) + pow((firstCoord.y - secondCoord.y), 2) );
+    }
+};
 
 int main(){
     ifstream inPontos;
 
-    inPontos.open("assets/pontos.txt");
+    inPontos.open("pontos.txt");
 
     if(!inPontos.is_open()){
         cout << "Não foi possível abrir o arquivo texto" << endl;
@@ -30,7 +44,7 @@ int main(){
 
     int contador = 1;
     for(auto& distancia: distancias){
-        printf("Distancia %d %.2lf\n", contador, distancia.calculaDistancia());//Shoter than cout sintax
+      cout << setprecision(2) << "Distancia " << contador << " " << distancia.calculaDistancia() << endl;
         contador++;
     }
 

@@ -43,8 +43,7 @@ int main(int argc, char** argv) {
    auto tamanho = editor.tamanho();
    for (auto i = 0; i < tamanho; i++) {
         char *linhaRef = editor.remove();
-        linha = linhaRef;
-        std::cout << "DEL: " << linha << std::endl;
+        std::cout << "DEL: " << linhaRef << std::endl;
         delete linhaRef;
    }
 

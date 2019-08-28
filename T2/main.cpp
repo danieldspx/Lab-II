@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
    for (auto i = 0; i < tamanho; i++) {
         char *linhaRef = editor.remove();
         std::cout << "DEL: " << linhaRef << std::endl;
-        delete linhaRef;
+        delete[] linhaRef;
    }
 
    editor.destroi();

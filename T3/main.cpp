@@ -8,8 +8,8 @@
 int main(int argc, char **argv) {
     Editor editor;
     editor.inicia();
-    // editor.carrega("texto.txt");
-    editor.legenda();
+    editor.carrega("texto.txt");
+    // editor.legenda(); //Vai ser chamada na editor.atualiza()
 
     while (editor.verifica_fim() == false) {
         editor.atualiza();

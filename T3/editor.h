@@ -29,6 +29,7 @@
 
         int line_size(int line_pos);
         void inicia();
+        int lines_total();
         void draw_cursor();
         void atualiza();
         void finaliza();
@@ -44,5 +45,6 @@
         void move_dir();
         void move_cima();
         void move_baixo();
+        void correct_view_canvas(int line_size);
     };
 #endif

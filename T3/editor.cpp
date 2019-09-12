@@ -14,6 +14,10 @@ int Editor::line_size(int line_pos) {
     return static_cast<int>(s.size());
 }
 
+int Editor::lines_total(){
+    return static_cast<int>(linhas.size());
+}
+
 void Editor::finaliza() {
     for (auto &linha : linhas) {
         delete linha;
@@ -102,7 +106,6 @@ void Editor::handle_key_press(caca_event_t ev){
                 break;
         }
     }
-    cout << view_canvas_start << endl;
 }
 
 void Editor::legenda() {
@@ -169,11 +172,8 @@ void Editor::insere(string &line) {
     linhas.push_back(new_line);
 }
 
-void Editor::write_lines(){
-    // int width_body = get_width(body_dim); 
+void Editor::write_lines(){ 
     int height_body = get_height(body_dim);
-    // int start_point_horizontal = body_dim.left;
-    // int start_point_vertical = body_dim.top;
     for(int line_pos = 0; line_pos < height_body && line_pos < static_cast<int>(linhas.size()); line_pos++){
         if(line_size(line_pos) > view_canvas_start){
            caca_put_str(canvas, 0, line_pos, linhas[line_pos] + view_canvas_start); 
@@ -188,11 +188,15 @@ void Editor::move_esq(){
         } else {
             cursor.x--;
         }
+    } else {
+        cursor.y--;//Go to line bottom
+        correct_view_canvas(line_size(cursor.y));
+        cursor.x = line_size(cursor.y) - view_canvas_start;
     }
 }
 
 void Editor::move_dir(){
-    if(cursor.x < body_dim.right && cursor.x + view_canvas_start< line_size(cursor.y)){
+    if(cursor.x < body_dim.right && cursor.x + view_canvas_start < line_size(cursor.y)){
         if(cursor.x + 1 == body_dim.right){
             //Do not incremet because the cursor is about to get off canvas
             //and it is correct to not increment because it should stay where it is
@@ -201,6 +205,10 @@ void Editor::move_dir(){
         } else {
             cursor.x++;
         }
+    } else {//Is trying to go right and is in the end of the string, so we go down the line
+        cursor.x = 0;
+        cursor.y++;//Go to line bottom
+        view_canvas_start = 0;
     }
 }
 
@@ -208,8 +216,7 @@ void Editor::move_cima(){
     if(cursor.y > body_dim.top){
         int above_line_size = line_size(cursor.y - 1);
         if((view_canvas_start + cursor.x) > above_line_size){
-            //TODO: NAO TA QUERENDO FUNCIONAR A VIEW
-            // view_canvas_start = above_line_size/get_width(body_dim);//Mod reduction to make the view update
+            correct_view_canvas(above_line_size);
             cursor.x = above_line_size - view_canvas_start;
         }
         cursor.y--;
@@ -217,12 +224,21 @@ void Editor::move_cima(){
 }
 
 void Editor::move_baixo(){
-    if(cursor.y < body_dim.bottom && cursor.y < static_cast<int>(linhas.size())){
+    if(cursor.y < body_dim.bottom && cursor.y < lines_total()){
         int below_line_size = line_size(cursor.y + 1);
         if((view_canvas_start + cursor.x) > below_line_size){
-            view_canvas_start = below_line_size/get_width(body_dim);//Mod reduction to make the view update
+            correct_view_canvas(below_line_size);
             cursor.x = below_line_size - view_canvas_start;
         }
         cursor.y++;
+    }
+}
+
+void Editor::correct_view_canvas(int line_size){
+    if(line_size < view_canvas_start || line_size > view_canvas_start+get_width(body_dim)){
+        view_canvas_start = line_size - get_width(body_dim) + 1;
+        if(view_canvas_start < 0){
+            view_canvas_start = 0;
+        }
     }
 }

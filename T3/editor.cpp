@@ -35,7 +35,9 @@ void Editor::inicia() {
     if (!display) {
         cout << "Erro ao criar o Display" << endl;
     }
+    is_transer_area_empty = true;
     exit = false;
+    has_unsaved_work = false;
     view_canvas_start = 0;
     canvas = caca_get_canvas(display);
     cursor = {0, 0, true, clock()};
@@ -59,6 +61,7 @@ void Editor::draw_cursor(){
 
 void Editor::atualiza() {
     write_lines();
+    update_title();
     draw_cursor();
     legenda();
     caca_refresh_display(display);
@@ -71,12 +74,11 @@ bool Editor::verifica_fim() {
 }
 
 bool Editor::is_cursor_end_string(){
-    return (cursor.x + view_canvas_start) == line_size(cursor.y);
+    return (cursor.x + view_canvas_start) >= (line_size(cursor.y) - 1);
 }
 
 void Editor::handle_events() {
     caca_get_event(display, CACA_EVENT_KEY_PRESS, &event, 100);
-    // char letra;
     switch (caca_get_event_type(&event)) {
         case CACA_EVENT_KEY_PRESS:
             handle_key_press(event);
@@ -110,19 +112,25 @@ void Editor::gruda_linha(){
 
 void Editor::erase_char(int direction){
     if(direction == ERASE_BACKWARD){
-        string s = linhas[cursor.y];
-        delete_from_vector(cursor.y);
-        s.erase(s.begin() + cursor.x);
-        insert_in(s, cursor.y);
-        move_esq();
+        if(cursor.x > 0){
+            string s = linhas[cursor.y];
+            if(s.size() > 0 && cursor.x > 0){
+                delete_from_vector(cursor.y);
+                s.erase(s.begin() + cursor.x - 1);
+                insert_in(s, cursor.y);
+            }
+        }
+        move_esq(); 
     } else {//ERASE_FORWARD
         if(is_cursor_end_string()){
             gruda_linha();
         } else {
             string s = linhas[cursor.y];
-            delete_from_vector(cursor.y);
-            s.erase(s.begin() + cursor.x + 1);
-            insert_in(s, cursor.y);
+            if(s.size() > 1){
+                delete_from_vector(cursor.y);
+                s.erase(s.begin() + cursor.x + 1);
+                insert_in(s, cursor.y);
+            }
         }
     }
 }
@@ -155,8 +163,17 @@ void Editor::handle_key_press(caca_event_t ev){
             case CACA_KEY_CTRL_X:
                 recorta_linha();
                 break;
+            case CACA_KEY_CTRL_V:
+                cola_linha();
+                break;
+            case CACA_KEY_CTRL_C:
+                copia_linha();
+                break;
             case CACA_KEY_RETURN:
                 quebra_linha();
+                break;
+            case CACA_KEY_PAUSE://SAME AS CTRL+S
+                salva();
                 break;
             default:
                 if(is_printable(caca_key)) {
@@ -224,18 +241,21 @@ void Editor::carrega(string filename){
     while (std::getline(file_input, read_line)) {
       insere(read_line);
    }
+   has_unsaved_work = false;
 }
 
 void Editor::insere(string &line) {
     char *new_line = new char[line.length() + 1];//TODO: Tentar usar unique_ptr
     strcpy(new_line, line.c_str());
     linhas.push_back(new_line);
+    has_unsaved_work = true;
 }
 
 void Editor::insert_in(string &line, int pos){
     char *new_line = new char[line.length() + 1];
     strcpy(new_line, line.c_str());
     linhas.insert(linhas.begin() + pos, new_line);
+    has_unsaved_work = true;
 }
 
 void Editor::write_lines(){ 
@@ -341,7 +361,12 @@ void Editor::recorta_linha(){
 }
 
 void Editor::cola_linha(){
-    insert_in(transfer_area, cursor.y+1);
+    if(!is_transer_area_empty){
+        insert_in(transfer_area, cursor.y+1);
+    }
+}
+void Editor::copia_linha(){
+    copy_line_2_transfer_area();
 }
 
 void Editor::quebra_linha(){
@@ -351,4 +376,16 @@ void Editor::quebra_linha(){
     delete_from_vector(cursor.y);
     insert_in(before_cursor, cursor.y);
     insert_in(after_cursor, cursor.y+1);
+}
+
+void Editor::update_title(){
+    if(has_unsaved_work){
+        caca_set_display_title(display, "(unsaved) Editor");
+    } else {
+        caca_set_display_title(display, "Editor");
+    }
+}
+
+void Editor::salva(){
+    has_unsaved_work = false;
 }

@@ -1,10 +1,2 @@
-Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-Proin id mauris hendrerit orci dapibus ornare a eu ex.
-Etiam imperdiet est ac tortor consectetur, id bibendum sapien gravida.
-Praesent lobortis pulvinar lacus in luctus. Pellentesque lacinia nunc et vehicula euismod.
-Nullam elementum nisl quam, eget convallis augue sollicitudin eget.
-Etiam commodo mi non turpis porttitor, rutrum ornare velit tincidunt.
-Vivamus id rutrum est. Vestibulum ac urna sollicitudin, sodales neque sed, aliquet dui.
-Aenean tincidunt venenatis quam ut semper.
-Curabitur pulvinar diam mi, eget consectetur ex maximus ac. Nulla ultricies nunc commodo aliquet pretium.
-Praesent varius nunc at tellus iaculis lacinia. Praesent varius nunc at tellus iaculis lacinia.
+Lorem ipsum dolor
+Proin id mauris

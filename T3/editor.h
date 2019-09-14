@@ -21,6 +21,8 @@
         vector<char *> linhas;
         bool exit;
         int view_canvas_start;//Posicao de qual cada linha vai comecar ser mostrada
+        bool has_unsaved_work;
+        bool is_transer_area_empty;
         string transfer_area;
         Dimension canvas_dim;
         Dimension footer_dim;
@@ -33,6 +35,7 @@
 
         int line_size(int line_pos);
         void inicia();
+        void salva();
         int lines_total();
         void draw_cursor();
         void atualiza();
@@ -61,5 +64,7 @@
         void recorta_linha();
         void cola_linha();
         void quebra_linha();
+        void update_title();
+        void copia_linha();
     };
 #endif

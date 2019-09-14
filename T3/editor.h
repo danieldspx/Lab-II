@@ -71,5 +71,6 @@
         void update_title();
         void copia_linha();
         int real_cursor_y();
+        void check_cursor();
     };
 #endif

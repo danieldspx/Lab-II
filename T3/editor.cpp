@@ -57,6 +57,7 @@ void Editor::draw_cursor(){
     int flag_display_cursor = cursor.showing ? 1 : 0;
     caca_set_cursor(display, flag_display_cursor);
     caca_gotoxy(canvas, cursor.x, cursor.y);
+    check_cursor();
 }
 
 void Editor::atualiza() {
@@ -383,12 +384,7 @@ void Editor::recorta_linha(){
     has_unsaved_work = true;
     copy_line_2_transfer_area();
     delete_from_vector(real_cursor_y());
-    if(real_cursor_y()+1 > lines_total()){
-        move_cima();
-    }
-    if((cursor.x + view_canvas_start) > line_size(real_cursor_y())){
-        cursor.x = line_size(real_cursor_y()) - view_canvas_start;
-    }
+    check_cursor();
 }
 
 void Editor::cola_linha(){
@@ -454,4 +450,13 @@ void Editor::write_on_file(ofstream& file){
 
 int Editor::real_cursor_y(){
     return cursor.y + view_canvas_vertical_start;
+}
+
+void Editor::check_cursor(){
+    if(real_cursor_y()+1 > lines_total()){
+        move_cima();
+    }
+    if((cursor.x + view_canvas_start) > line_size(real_cursor_y())){
+        cursor.x = line_size(real_cursor_y()) - view_canvas_start;
+    }
 }

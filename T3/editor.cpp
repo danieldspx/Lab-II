@@ -197,7 +197,7 @@ void Editor::handle_key_press(caca_event_t ev){
 void Editor::legenda() {
     vector<string> legendas{
         "ESQ: Sair do editor",
-        "CTRL+S: Salvar e sair",
+        "CTRL+S: Salvar",
         "ENTER: Quebra linha",
         "CTRL+X: Recortar ",
         "CTRL+C: Copiar ",

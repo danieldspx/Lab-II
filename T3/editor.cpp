@@ -74,7 +74,7 @@ bool Editor::verifica_fim() {
 }
 
 bool Editor::is_cursor_end_string(){
-    return (cursor.x + view_canvas_start) >= (line_size(cursor.y) - 1);
+    return (cursor.x + view_canvas_start) == line_size(cursor.y);
 }
 
 void Editor::handle_events() {
@@ -126,9 +126,9 @@ void Editor::erase_char(int direction){
             gruda_linha();
         } else {
             string s = linhas[cursor.y];
-            if(s.size() > 1){
+            if(s.size() > 0){
                 delete_from_vector(cursor.y);
-                s.erase(s.begin() + cursor.x + 1);
+                s.erase(s.begin() + cursor.x);
                 insert_in(s, cursor.y);
             }
         }
@@ -241,6 +241,8 @@ void Editor::carrega(string filename){
     while (std::getline(file_input, read_line)) {
       insere(read_line);
    }
+   file_input.close();
+   Editor::filename_open = filename;
    has_unsaved_work = false;
 }
 
@@ -356,6 +358,7 @@ void Editor::copy_line_2_transfer_area(){
 }
 
 void Editor::recorta_linha(){
+    is_transer_area_empty = false;
     copy_line_2_transfer_area();
     delete_from_vector(cursor.y);
 }
@@ -366,6 +369,7 @@ void Editor::cola_linha(){
     }
 }
 void Editor::copia_linha(){
+    is_transer_area_empty = false;
     copy_line_2_transfer_area();
 }
 
@@ -388,4 +392,33 @@ void Editor::update_title(){
 
 void Editor::salva(){
     has_unsaved_work = false;
+    ofstream file{Editor::filename_open};
+    if(!file.is_open()){
+        cout << "Error opening file: " << Editor::filename_open << endl;
+        return;
+    }
+    write_on_file(file);
+    file.close();
+}
+
+void Editor::salva(string filename){
+    ofstream file{filename};
+    if(!file.is_open()){
+        cout << "Error opening file: " << filename << endl;
+        return;
+    }
+    write_on_file(file);
+    file.close();
+}
+
+void Editor::write_on_file(ofstream& file){
+    if(!file.is_open()){
+        cout << "Error on writing on file. File is not open." << endl;
+        return;
+    }
+
+    for(auto& linha: linhas){
+        string txt = linha;
+        file << linha << endl;
+    }
 }

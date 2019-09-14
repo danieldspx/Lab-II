@@ -14,10 +14,8 @@ int main(int argc, char **argv) {
     while (editor.verifica_fim() == false) {
         editor.atualiza();
     }
-    // editor.salva("saida.txt");
+    editor.salva("saida.txt");
     editor.finaliza();
-    // editor.print();
-
     
     return 0;
 }

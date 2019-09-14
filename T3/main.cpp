@@ -14,7 +14,8 @@ int main(int argc, char **argv) {
     while (editor.verifica_fim() == false) {
         editor.atualiza();
     }
-    editor.salva("saida.txt");
+    
+    editor.salva("saida.txt");//Nao faz sentido salvar em um arquivo diferente. Fiz uma sobrecarga de funcoes pro salva
     editor.finaliza();
     
     return 0;

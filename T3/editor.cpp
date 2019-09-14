@@ -38,7 +38,7 @@ void Editor::inicia() {
     is_transer_area_empty = true;
     exit = false;
     has_unsaved_work = false;
-    view_canvas_start = 0;
+    view_canvas_start = view_canvas_vertical_start = 0;
     canvas = caca_get_canvas(display);
     cursor = {0, 0, true, clock()};
 
@@ -49,7 +49,7 @@ void Editor::inicia() {
 }
 
 void Editor::draw_cursor(){
-    if(get_elapsed_time(cursor.clock_begin) >= 0.03){
+    if(get_elapsed_time(cursor.clock_begin) >= 0.08){
         cursor.clock_begin = clock();//Reset time
         cursor.showing = !cursor.showing;
     }
@@ -74,7 +74,7 @@ bool Editor::verifica_fim() {
 }
 
 bool Editor::is_cursor_end_string(){
-    return (cursor.x + view_canvas_start) == line_size(cursor.y);
+    return (cursor.x + view_canvas_start) == line_size(real_cursor_y());
 }
 
 void Editor::handle_events() {
@@ -90,46 +90,55 @@ void Editor::handle_events() {
 }
 
 void Editor::insere_char(char c){
-    string s = linhas[cursor.y];
-    delete_from_vector(cursor.y);
-    s.insert(cursor.x, 1, c);
-    insert_in(s, cursor.y);
+    string s;
+    if(lines_total() != 0){
+        s = linhas[real_cursor_y()];
+        delete_from_vector(real_cursor_y());
+        s.insert(cursor.x, 1, c);
+    } else {
+        s = c;
+    }
+    insert_in(s, real_cursor_y());
     move_dir();
 }
 
 void Editor::gruda_linha(){
-    if(cursor.y+1 >= lines_total()){
+    if(real_cursor_y()+1 >= lines_total()){
         return;
     }
 
-    string current_line = linhas.at(cursor.y);    
-    string below_line = linhas.at(cursor.y+1);
+    string current_line = linhas.at(real_cursor_y());    
+    string below_line = linhas.at(real_cursor_y()+1);
     string combination_line = current_line+below_line;
-    delete_from_vector(cursor.y+1);//This order is important
-    delete_from_vector(cursor.y);
-    insert_in(combination_line, cursor.y);
+    delete_from_vector(real_cursor_y()+1);//This order is important
+    delete_from_vector(real_cursor_y());
+    insert_in(combination_line, real_cursor_y());
 }
 
 void Editor::erase_char(int direction){
+    int cursor_real_x = cursor.x + view_canvas_start; 
     if(direction == ERASE_BACKWARD){
-        if(cursor.x > 0){
-            string s = linhas[cursor.y];
-            if(s.size() > 0 && cursor.x > 0){
-                delete_from_vector(cursor.y);
-                s.erase(s.begin() + cursor.x - 1);
-                insert_in(s, cursor.y);
+        if(cursor_real_x > 0){
+            string s = linhas[real_cursor_y()];
+            if(s.size() > 0 && cursor_real_x > 0){
+                delete_from_vector(real_cursor_y());
+                s.erase(s.begin() + cursor_real_x - 1);
+                insert_in(s, real_cursor_y());
             }
         }
-        move_esq(); 
+        move_esq();
+        if(is_cursor_end_string()){
+            gruda_linha();
+        }
     } else {//ERASE_FORWARD
         if(is_cursor_end_string()){
             gruda_linha();
         } else {
-            string s = linhas[cursor.y];
+            string s = linhas[real_cursor_y()];
             if(s.size() > 0){
-                delete_from_vector(cursor.y);
-                s.erase(s.begin() + cursor.x);
-                insert_in(s, cursor.y);
+                delete_from_vector(real_cursor_y());
+                s.erase(s.begin() + cursor_real_x);
+                insert_in(s, real_cursor_y());
             }
         }
     }
@@ -179,7 +188,6 @@ void Editor::handle_key_press(caca_event_t ev){
                 if(is_printable(caca_key)) {
                     insere_char(caca_key);
                 }
-                cout<<"Sei n: "<<caca_key<<endl;
                 break;
         }
     }
@@ -187,9 +195,12 @@ void Editor::handle_key_press(caca_event_t ev){
 
 void Editor::legenda() {
     vector<string> legendas{
-        "ESQ: sair do editor",
-        "CTRL+s: salvar e sair",
-        "ENTER: quebra linha"
+        "ESQ: Sair do editor",
+        "CTRL+S: Salvar e sair",
+        "ENTER: Quebra linha",
+        "CTRL+X: Recortar ",
+        "CTRL+C: Copiar ",
+        "CTRL+V: Colar ",
     };
 
     int padding_size = -1;
@@ -262,9 +273,10 @@ void Editor::insert_in(string &line, int pos){
 
 void Editor::write_lines(){ 
     int height_body = get_height(body_dim);
-    for(int line_pos = 0; line_pos < height_body && line_pos < lines_total(); line_pos++){
+    for(int line_pos = view_canvas_vertical_start; (line_pos - view_canvas_vertical_start) < height_body && line_pos < lines_total(); line_pos++){
         if(line_size(line_pos) > view_canvas_start){
-           caca_put_str(canvas, 0, line_pos, linhas[line_pos] + view_canvas_start); 
+            int relative_y = line_pos - view_canvas_vertical_start;//We have to discount the vertical_start
+           caca_put_str(canvas, 0, relative_y, linhas[line_pos] + view_canvas_start); 
         }
     }
 }
@@ -280,8 +292,8 @@ bool Editor::move_esq(){
         has_moved = true;
     } else {
         if(move_cima()){
-            correct_view_canvas(line_size(cursor.y));
-            cursor.x = line_size(cursor.y) - view_canvas_start;
+            correct_view_canvas(line_size(real_cursor_y()));
+            cursor.x = line_size(real_cursor_y()) - view_canvas_start;
             has_moved = true;
         }
     }
@@ -290,7 +302,7 @@ bool Editor::move_esq(){
 
 bool Editor::move_dir(){
     bool has_moved = false;
-    if(cursor.x < body_dim.right && cursor.x + view_canvas_start < line_size(cursor.y)){
+    if(cursor.x < body_dim.right && cursor.x + view_canvas_start < line_size(real_cursor_y())){
         if(cursor.x + 1 == body_dim.right){
             //Do not incremet because the cursor is about to get off canvas
             //and it is correct to not increment because it should stay where it is
@@ -312,7 +324,7 @@ bool Editor::move_dir(){
 
 bool Editor::move_cima(){
     if(cursor.y > body_dim.top){
-        int above_line_size = line_size(cursor.y - 1);
+        int above_line_size = line_size(real_cursor_y() - 1);
         if((view_canvas_start + cursor.x) > above_line_size){
             correct_view_canvas(above_line_size);
             cursor.x = above_line_size - view_canvas_start;
@@ -320,20 +332,25 @@ bool Editor::move_cima(){
         cursor.y--;
 
         return true;
+    } else if (cursor.y == body_dim.top && view_canvas_vertical_start > 0) {
+        view_canvas_vertical_start--;
+        cursor.x = line_size(real_cursor_y());
     }
 
     return false;
 }
 
 bool Editor::move_baixo(){
-    if(cursor.y < body_dim.bottom && cursor.y+1 < lines_total()){
-        int below_line_size = line_size(cursor.y + 1);
+    if(cursor.y+1 < body_dim.bottom && real_cursor_y()+1 < lines_total()){
+        int below_line_size = line_size(real_cursor_y() + 1);
         if((view_canvas_start + cursor.x) > below_line_size){
             correct_view_canvas(below_line_size);
             cursor.x = below_line_size - view_canvas_start;
         }
         cursor.y++;
         return true;
+    } else if (real_cursor_y()+1 < lines_total()){
+        view_canvas_vertical_start++;
     }
 
     return false;
@@ -354,18 +371,29 @@ void Editor::delete_from_vector(int pos){
 }
 
 void Editor::copy_line_2_transfer_area(){
-    transfer_area = linhas.at(cursor.y);
+    transfer_area = linhas.at(real_cursor_y());
 }
 
 void Editor::recorta_linha(){
+    if(lines_total() == 0){
+        return;
+    }
+
     is_transer_area_empty = false;
+    has_unsaved_work = true;
     copy_line_2_transfer_area();
-    delete_from_vector(cursor.y);
+    delete_from_vector(real_cursor_y());
+    if(real_cursor_y()+1 > lines_total()){
+        move_cima();
+    }
+    if((cursor.x + view_canvas_start) > line_size(real_cursor_y())){
+        cursor.x = line_size(real_cursor_y()) - view_canvas_start;
+    }
 }
 
 void Editor::cola_linha(){
     if(!is_transer_area_empty){
-        insert_in(transfer_area, cursor.y+1);
+        insert_in(transfer_area, real_cursor_y()+1);
     }
 }
 void Editor::copia_linha(){
@@ -374,12 +402,12 @@ void Editor::copia_linha(){
 }
 
 void Editor::quebra_linha(){
-    string cursor_line = linhas.at(cursor.y);
+    string cursor_line = linhas.at(real_cursor_y());
     string before_cursor = cursor_line.substr(0, cursor.x);
     string after_cursor = cursor_line.substr(cursor.x);
-    delete_from_vector(cursor.y);
-    insert_in(before_cursor, cursor.y);
-    insert_in(after_cursor, cursor.y+1);
+    delete_from_vector(real_cursor_y());
+    insert_in(before_cursor, real_cursor_y());
+    insert_in(after_cursor, real_cursor_y()+1);
 }
 
 void Editor::update_title(){
@@ -402,6 +430,7 @@ void Editor::salva(){
 }
 
 void Editor::salva(string filename){
+    has_unsaved_work = false;
     ofstream file{filename};
     if(!file.is_open()){
         cout << "Error opening file: " << filename << endl;
@@ -421,4 +450,8 @@ void Editor::write_on_file(ofstream& file){
         string txt = linha;
         file << linha << endl;
     }
+}
+
+int Editor::real_cursor_y(){
+    return cursor.y + view_canvas_vertical_start;
 }

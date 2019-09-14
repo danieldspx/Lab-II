@@ -20,6 +20,7 @@
     struct Editor {
         vector<char *> linhas;
         bool exit;
+        int view_canvas_vertical_start;
         int view_canvas_start;//Posicao de qual cada linha vai comecar ser mostrada
         bool has_unsaved_work;
         bool is_transer_area_empty;
@@ -69,5 +70,6 @@
         void quebra_linha();
         void update_title();
         void copia_linha();
+        int real_cursor_y();
     };
 #endif

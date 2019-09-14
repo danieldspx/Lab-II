@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
         editor.atualiza();
     }
     // editor.salva("saida.txt");
-    // editor.finaliza();
+    editor.finaliza();
     // editor.print();
 
     

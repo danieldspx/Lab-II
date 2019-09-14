@@ -19,12 +19,15 @@ int Editor::lines_total(){
 }
 
 void Editor::finaliza() {
-    for (auto &linha : linhas) {
-        delete linha;
+    for (int i = 0; i < lines_total(); i++) {
+        delete_from_vector(i);
     }
-    exit = true;
     caca_free_display(display);
     display =  nullptr;
+}
+
+void Editor::end_editor(){
+    exit = true;
 }
 
 void Editor::inicia() {
@@ -55,8 +58,6 @@ void Editor::draw_cursor(){
 }
 
 void Editor::atualiza() {
-    //This order is because handle_events can free display. If so, no one else should use it
-    //Thats why he is the last one
     write_lines();
     draw_cursor();
     legenda();
@@ -69,6 +70,10 @@ bool Editor::verifica_fim() {
     return exit;
 }
 
+bool Editor::is_cursor_end_string(){
+    return (cursor.x + view_canvas_start) == line_size(cursor.y);
+}
+
 void Editor::handle_events() {
     caca_get_event(display, CACA_EVENT_KEY_PRESS, &event, 100);
     // char letra;
@@ -79,6 +84,46 @@ void Editor::handle_events() {
         default:
             // cout << "Default" << endl;
             break;
+    }
+}
+
+void Editor::insere_char(char c){
+    string s = linhas[cursor.y];
+    delete_from_vector(cursor.y);
+    s.insert(cursor.x, 1, c);
+    insert_in(s, cursor.y);
+    move_dir();
+}
+
+void Editor::gruda_linha(){
+    if(cursor.y+1 >= lines_total()){
+        return;
+    }
+
+    string current_line = linhas.at(cursor.y);    
+    string below_line = linhas.at(cursor.y+1);
+    string combination_line = current_line+below_line;
+    delete_from_vector(cursor.y+1);//This order is important
+    delete_from_vector(cursor.y);
+    insert_in(combination_line, cursor.y);
+}
+
+void Editor::erase_char(int direction){
+    if(direction == ERASE_BACKWARD){
+        string s = linhas[cursor.y];
+        delete_from_vector(cursor.y);
+        s.erase(s.begin() + cursor.x);
+        insert_in(s, cursor.y);
+        move_esq();
+    } else {//ERASE_FORWARD
+        if(is_cursor_end_string()){
+            gruda_linha();
+        } else {
+            string s = linhas[cursor.y];
+            delete_from_vector(cursor.y);
+            s.erase(s.begin() + cursor.x + 1);
+            insert_in(s, cursor.y);
+        }
     }
 }
 
@@ -99,9 +144,24 @@ void Editor::handle_key_press(caca_event_t ev){
                 move_esq();
                 break;
             case CACA_KEY_ESCAPE:
-                finaliza();
+                end_editor();
+                break;
+            case CACA_KEY_BACKSPACE:
+                erase_char(ERASE_BACKWARD);
+                break;
+            case CACA_KEY_DELETE:
+                erase_char(ERASE_FORWARD);
+                break;
+            case CACA_KEY_CTRL_X:
+                recorta_linha();
+                break;
+            case CACA_KEY_RETURN:
+                quebra_linha();
                 break;
             default:
+                if(is_printable(caca_key)) {
+                    insere_char(caca_key);
+                }
                 cout<<"Sei n: "<<caca_key<<endl;
                 break;
         }
@@ -172,30 +232,42 @@ void Editor::insere(string &line) {
     linhas.push_back(new_line);
 }
 
+void Editor::insert_in(string &line, int pos){
+    char *new_line = new char[line.length() + 1];
+    strcpy(new_line, line.c_str());
+    linhas.insert(linhas.begin() + pos, new_line);
+}
+
 void Editor::write_lines(){ 
     int height_body = get_height(body_dim);
-    for(int line_pos = 0; line_pos < height_body && line_pos < static_cast<int>(linhas.size()); line_pos++){
+    for(int line_pos = 0; line_pos < height_body && line_pos < lines_total(); line_pos++){
         if(line_size(line_pos) > view_canvas_start){
            caca_put_str(canvas, 0, line_pos, linhas[line_pos] + view_canvas_start); 
         }
     }
 }
 
-void Editor::move_esq(){
+bool Editor::move_esq(){
+    bool has_moved = false;
     if(cursor.x > body_dim.left){
         if(cursor.x - 1 == body_dim.left && view_canvas_start > 0){
             view_canvas_start--;
         } else {
             cursor.x--;
         }
+        has_moved = true;
     } else {
-        cursor.y--;//Go to line bottom
-        correct_view_canvas(line_size(cursor.y));
-        cursor.x = line_size(cursor.y) - view_canvas_start;
+        if(move_cima()){
+            correct_view_canvas(line_size(cursor.y));
+            cursor.x = line_size(cursor.y) - view_canvas_start;
+            has_moved = true;
+        }
     }
+    return has_moved;
 }
 
-void Editor::move_dir(){
+bool Editor::move_dir(){
+    bool has_moved = false;
     if(cursor.x < body_dim.right && cursor.x + view_canvas_start < line_size(cursor.y)){
         if(cursor.x + 1 == body_dim.right){
             //Do not incremet because the cursor is about to get off canvas
@@ -205,14 +277,18 @@ void Editor::move_dir(){
         } else {
             cursor.x++;
         }
+        has_moved = true;
     } else {//Is trying to go right and is in the end of the string, so we go down the line
-        cursor.x = 0;
-        cursor.y++;//Go to line bottom
-        view_canvas_start = 0;
+        if(move_baixo()){
+            cursor.x = 0;
+            view_canvas_start = 0;
+            has_moved = true;
+        }
     }
+    return has_moved;
 }
 
-void Editor::move_cima(){
+bool Editor::move_cima(){
     if(cursor.y > body_dim.top){
         int above_line_size = line_size(cursor.y - 1);
         if((view_canvas_start + cursor.x) > above_line_size){
@@ -220,18 +296,25 @@ void Editor::move_cima(){
             cursor.x = above_line_size - view_canvas_start;
         }
         cursor.y--;
+
+        return true;
     }
+
+    return false;
 }
 
-void Editor::move_baixo(){
-    if(cursor.y < body_dim.bottom && cursor.y < lines_total()){
+bool Editor::move_baixo(){
+    if(cursor.y < body_dim.bottom && cursor.y+1 < lines_total()){
         int below_line_size = line_size(cursor.y + 1);
         if((view_canvas_start + cursor.x) > below_line_size){
             correct_view_canvas(below_line_size);
             cursor.x = below_line_size - view_canvas_start;
         }
         cursor.y++;
+        return true;
     }
+
+    return false;
 }
 
 void Editor::correct_view_canvas(int line_size){
@@ -241,4 +324,31 @@ void Editor::correct_view_canvas(int line_size){
             view_canvas_start = 0;
         }
     }
+}
+
+void Editor::delete_from_vector(int pos){
+    delete[] linhas[pos];
+    linhas.erase(linhas.begin() + pos);
+}
+
+void Editor::copy_line_2_transfer_area(){
+    transfer_area = linhas.at(cursor.y);
+}
+
+void Editor::recorta_linha(){
+    copy_line_2_transfer_area();
+    delete_from_vector(cursor.y);
+}
+
+void Editor::cola_linha(){
+    insert_in(transfer_area, cursor.y+1);
+}
+
+void Editor::quebra_linha(){
+    string cursor_line = linhas.at(cursor.y);
+    string before_cursor = cursor_line.substr(0, cursor.x);
+    string after_cursor = cursor_line.substr(cursor.x);
+    delete_from_vector(cursor.y);
+    insert_in(before_cursor, cursor.y);
+    insert_in(after_cursor, cursor.y+1);
 }

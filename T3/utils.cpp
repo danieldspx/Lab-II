@@ -23,3 +23,7 @@ double get_elapsed_time(std::clock_t begin){
 int mod(int num){
     return num > 0 ? num : -num;
 }
+
+bool is_printable(int code){
+    return 32 <= code && code <= 126;
+}

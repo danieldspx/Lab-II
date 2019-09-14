@@ -7,6 +7,9 @@
 
     using namespace std;
 
+    const int ERASE_FORWARD = 1;
+    const int ERASE_BACKWARD = -1;
+
     struct Cursor {
         int x;
         int y;
@@ -18,6 +21,7 @@
         vector<char *> linhas;
         bool exit;
         int view_canvas_start;//Posicao de qual cada linha vai comecar ser mostrada
+        string transfer_area;
         Dimension canvas_dim;
         Dimension footer_dim;
         Dimension body_dim;
@@ -36,15 +40,26 @@
         void carrega(string filename);
         bool verifica_fim();
         void handle_events();
+        bool is_cursor_end_string();
         void legenda();
         void update_dimensions();
         void insere(string &linha);
         void write_lines();
         void handle_key_press(caca_event_t ev);
-        void move_esq();
-        void move_dir();
-        void move_cima();
-        void move_baixo();
+        bool move_esq();
+        bool move_dir();
+        bool move_cima();
+        bool move_baixo();
+        void end_editor();
+        void insere_char(char c);
+        void erase_char(int direction);
+        void insert_in(string &line, int pos);
         void correct_view_canvas(int line_size);
+        void delete_from_vector(int pos);
+        void gruda_linha();
+        void copy_line_2_transfer_area();
+        void recorta_linha();
+        void cola_linha();
+        void quebra_linha();
     };
 #endif

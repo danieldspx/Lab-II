@@ -7,7 +7,7 @@
 // programa
 int main(int argc, char **argv) {
     Editor editor;
-    editor.inicia();
+    editor.inicia("saida.txt");
     editor.carrega("texto.txt");
     // editor.legenda(); //Vai ser chamada na editor.atualiza()
 
@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
         editor.atualiza();
     }
     
-    editor.salva("saida.txt");//Nao faz sentido salvar em um arquivo diferente. Fiz uma sobrecarga de funcoes pro salva
+    editor.salva("saida.txt");
     editor.finaliza();
     
     return 0;

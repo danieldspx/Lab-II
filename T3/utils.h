@@ -14,6 +14,5 @@
     int get_width(Dimension dim);
     int get_height(Dimension dim);
     double get_elapsed_time(std::clock_t begin);
-    int mod(int num);
     bool is_printable(int code);
 #endif

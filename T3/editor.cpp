@@ -30,11 +30,12 @@ void Editor::end_editor(){
     exit = true;
 }
 
-void Editor::inicia() {
+void Editor::inicia(string output_file) {
     display = caca_create_display(NULL);
     if (!display) {
         cout << "Erro ao criar o Display" << endl;
     }
+    filename_output = output_file;
     is_transer_area_empty = true;
     exit = false;
     has_unsaved_work = false;
@@ -183,7 +184,7 @@ void Editor::handle_key_press(caca_event_t ev){
                 quebra_linha();
                 break;
             case CACA_KEY_PAUSE://SAME AS CTRL+S
-                salva();
+                salva(filename_output);
                 break;
             default:
                 if(is_printable(caca_key)) {
@@ -414,17 +415,6 @@ void Editor::update_title(){
     }
 }
 
-void Editor::salva(){
-    has_unsaved_work = false;
-    ofstream file{Editor::filename_open};
-    if(!file.is_open()){
-        cout << "Error opening file: " << Editor::filename_open << endl;
-        return;
-    }
-    write_on_file(file);
-    file.close();
-}
-
 void Editor::salva(string filename){
     has_unsaved_work = false;
     ofstream file{filename};
@@ -443,7 +433,6 @@ void Editor::write_on_file(ofstream& file){
     }
 
     for(auto& linha: linhas){
-        string txt = linha;
         file << linha << endl;
     }
 }

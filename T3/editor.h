@@ -25,6 +25,7 @@
         bool has_unsaved_work;
         bool is_transer_area_empty;
         string filename_open;
+        string filename_output;
         string transfer_area;
         Dimension canvas_dim;
         Dimension footer_dim;
@@ -36,9 +37,8 @@
         caca_event_t event;
 
         int line_size(int line_pos);
-        void inicia();
+        void inicia(string output_file);
         void write_on_file(ofstream& file);
-        void salva();
         void salva(string filename);
         int lines_total();
         void draw_cursor();

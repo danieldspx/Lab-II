@@ -96,7 +96,7 @@ void Editor::insere_char(char c){
     if(lines_total() != 0){
         s = linhas[real_cursor_y()];
         delete_from_vector(real_cursor_y());
-        s.insert(cursor.x, 1, c);
+        s.insert(cursor.x+view_canvas_start, 1, c);
     } else {
         s = c;
     }

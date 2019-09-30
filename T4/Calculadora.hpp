@@ -180,7 +180,7 @@ struct Calculadora {
         if(operadores.empty())
             return true;
 
-        char operador = operadores.top();
+        char operadorOP = operadores.top();
         operadores.pop();
 
         if(operandos.size() < 2) {
@@ -195,7 +195,7 @@ struct Calculadora {
         
         T result;
 
-        switch (operador){
+        switch (operadorOP){
             case '+':
                 result = operando1 + operando2;
                 break;

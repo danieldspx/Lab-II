@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include<algorithm>
 
 struct Operador {
     char op;
@@ -112,6 +113,11 @@ struct Calculadora {
             return;
         }
 
+        //Reverse os vector pq ai tirando da pilha vai ser como a precedencia da esquerda pra direita
+        //Sem o reverse seria como se efetuassemos os calculos da direita pra esquerda.
+        std::reverse(shadowOperadores.begin(), shadowOperadores.end());
+        std::reverse(shadowOperandos.begin(), shadowOperandos.end());
+
         for(auto &v: shadowOperadores){
             orderedOperadores.push_back({v, operadorWeight(v)});
         }
@@ -200,16 +206,16 @@ struct Calculadora {
                 result = operando1 + operando2;
                 break;
             case '-':
-                result = operando2 - operando1;
+                result = operando1 - operando2;
                 break;
             case '*':
-                result = operando2 * operando1;
+                result = operando1 * operando2;
                 break;
             case '/':
-                result = operando2 / operando1;
+                result = operando1 / operando2;
                 break;
             case '^':
-                result = pow(operando2, operando1);
+                result = pow(operando1, operando2);
                 break;
             default:
                 hasSyntaxError = true;

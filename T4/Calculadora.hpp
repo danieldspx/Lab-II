@@ -149,6 +149,8 @@ struct Calculadora {
                     //Calcula com o que tem na stack
                     calcula();
 
+                    if(hasSyntaxError) return;
+
                     //Coloca no `shadowOperandos` pra continuar o processo e remove o resultado de `operandos`
                     insertInPos(shadowOperandos, pos, operandos.top());
                     if(i != orderedOperadores.size() - 1){//Se nao e a ultima operacao, entao remove da pilha operandos
@@ -212,7 +214,12 @@ struct Calculadora {
                 result = operando1 * operando2;
                 break;
             case '/':
-                result = operando1 / operando2;
+                if(operando2 != 0){
+                    result = operando1 / operando2;
+                } else {
+                    hasSyntaxError = true;
+                    result = 0;
+                }
                 break;
             case '^':
                 result = pow(operando1, operando2);

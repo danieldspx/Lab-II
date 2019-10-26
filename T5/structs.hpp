@@ -1,8 +1,8 @@
 #pragma once
 
 struct Position {
-    int x;
-    int y;
+    int line;
+    int column;
 };
 
 struct Dimension {

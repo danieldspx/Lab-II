@@ -1,5 +1,7 @@
 #include <iostream>
 #include "planilha.hpp"
+#include "util.hpp"
+#include "structs.hpp"
 
 using namespace std;
 

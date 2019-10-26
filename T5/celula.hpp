@@ -12,5 +12,5 @@ struct Celula {
     double val; //Stores the result of the formula
     bool hasError;
 
-    void init(Position posInitial, string addr); //Initialize a new Cell
+    void init(Position posInitial, string addr, int valInitial); //Initialize a new Cell
 };

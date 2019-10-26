@@ -16,9 +16,9 @@ struct Planilha {
     Dimension cellsDim;
     Dimension legendaShift;
     Dimension inputBox;
-    Position cursor;
-    bool shouldExit;
     Position displayShift;
+    Position cellCursor;
+    bool shouldExit;
 
 
     void init();
@@ -37,4 +37,6 @@ struct Planilha {
     bool hasEnoughSpaceLine(int line, int height);
     bool hasEnoughSpaceColumn(int column, int width);
     void drawInputBox();
+    bool isCellCursorWhitinDisplayVertical();
+    bool isCellCursorWhitinDisplayHorizontal();
 };

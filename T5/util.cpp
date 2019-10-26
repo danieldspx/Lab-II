@@ -6,6 +6,7 @@ std::string position2address(Position pos){
     char* address = new char[3+1];//Like A21 (+1 is for the \0)
     const char asciiA = 'A';
     sprintf(address, "%c%d",(asciiA + pos.column), (pos.line+1));
+    std::string addressStr(address);
     delete[] address;
-    return std::string(address);
+    return addressStr;
 }

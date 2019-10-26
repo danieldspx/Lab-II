@@ -10,7 +10,7 @@ using namespace std;
 void Planilha::init(){
     //INITIALIZE VARIABLES
     cellsDim = {width: 8, height: 3};
-    cursor = {0,0};
+    cellCursor = {0,0};
     shouldExit = false;
     displayShift = {0, 0};
     legendaShift = cellsDim;
@@ -32,7 +32,7 @@ void Planilha::init(){
             Position currentPos = {line, column};
             string address = position2address(currentPos);//convert to something like A21
             cells.insert(std::pair<std::string, Celula>(address, Celula()));//Insert the new Celula
-            cells[address].init(currentPos, address);//Initialize the newly created Celula
+            cells[address].init(currentPos, address,line+column);//Initialize the newly created Celula
         }
     }
 }
@@ -111,13 +111,41 @@ void Planilha::handle_key_press(caca_event_t ev){
     }
 }
 
-void Planilha::cursor_up(){};
+void Planilha::cursor_up(){
+    if(cellCursor.line > 0){
+        cellCursor.line--;
+        if(!isCellCursorWhitinDisplayVertical()){
+            displayShift.line--;
+        }
+    }
+};
 
-void Planilha::cursor_right(){};
+void Planilha::cursor_right(){
+    if(cellCursor.column+1 < columnsSize){
+        cellCursor.column++;
+        if(!isCellCursorWhitinDisplayHorizontal()){
+            displayShift.column++;
+        }
+    }
+};
 
-void Planilha::cursor_down(){};
+void Planilha::cursor_down(){
+    if(cellCursor.line+1 < linesSize){
+        cellCursor.line++;
+        if(!isCellCursorWhitinDisplayVertical()){
+            displayShift.line++;
+        }
+    }
+};
 
-void Planilha::cursor_left(){};
+void Planilha::cursor_left(){
+    if(cellCursor.column > 0){
+        cellCursor.column--;
+        if(!isCellCursorWhitinDisplayHorizontal()){
+            displayShift.column--;
+        }
+    }
+};
 
 void Planilha::drawLegenda(){
     int width = caca_get_canvas_width(canvas);
@@ -126,12 +154,12 @@ void Planilha::drawLegenda(){
     char *valStr = new char[4];
     char asciiA = 'A';
 
-    for(int column = displayShift.column, i = 0; hasEnoughSpaceColumn(column, width) && i < columnsSize; column++, i++){
-        caca_put_char(canvas, column*cellsDim.width + (cellsDim.width/2) + legendaShift.width, legendaShift.height/2, asciiA+column);
+    for(int column = 0, i = 0; hasEnoughSpaceColumn(displayShift.column + column, width) && i < columnsSize; column++, i++){
+        caca_put_char(canvas, column*cellsDim.width + (cellsDim.width/2) + legendaShift.width, legendaShift.height/2, asciiA+column+displayShift.column);
     }
 
-    for(int line = displayShift.line, i = 0; hasEnoughSpaceLine(line, height) && i < linesSize; line++, i++){
-        sprintf(valStr, "%d", line+1);
+    for(int line = 0, i = 0; hasEnoughSpaceLine(displayShift.line + line, height) && i < linesSize; line++, i++){
+        sprintf(valStr, "%d", line+displayShift.line+1);
         caca_put_str(canvas, legendaShift.width/2, line*cellsDim.height + (cellsDim.height/2) + legendaShift.height, valStr);
     }
 
@@ -147,13 +175,12 @@ void Planilha::drawCells(){
 
     drawLegenda();
 
-    for(int line = displayShift.line, i = 0; hasEnoughSpaceLine(line, height) && i < linesSize; line++, i++){
-        for(int column = displayShift.column, j = 0; hasEnoughSpaceColumn(column, width) && j < columnsSize; column++, j++){
-            drawablePosition.line = line%height;//Modular reduction to fit the line in the display
-            drawablePosition.column = column%width;
-            address = position2address(Position{line, column});
-
-            drawCellOnDisplay(drawablePosition, cells[address]);
+    for(int line = 0, i = 0; hasEnoughSpaceLine(displayShift.line + line, height) && i < linesSize; line++, i++){
+        for(int column = 0, j = 0; hasEnoughSpaceColumn(displayShift.column + column, width) && j < columnsSize; column++, j++){
+            drawablePosition.line = line;//Modular reduction to fit the line in the display
+            drawablePosition.column = column;
+            address = position2address(Position{displayShift.line + line, displayShift.column + column});
+            drawCellOnDisplay(drawablePosition, cells.at(address));
         }
     }
 }
@@ -163,8 +190,13 @@ void Planilha::drawCellOnDisplay(Position pos, Celula cell){
     sprintf(str, "%.0lf", cell.val);
     pos.column = pos.column*cellsDim.width + legendaShift.width;
     pos.line = pos.line*cellsDim.height + legendaShift.height;
+
+    if(cell.pos == cellCursor) caca_set_color_ansi(canvas, CACA_LIGHTRED, CACA_BLACK);
+
     caca_draw_cp437_box(canvas, pos.column, pos.line, cellsDim.width, cellsDim.height);
     caca_put_str(canvas, pos.column + 1, pos.line + cellsDim.height/2, str);
+
+    if(cell.pos == cellCursor) caca_set_color_ansi(canvas, CACA_LIGHTGREEN, CACA_BLACK);
 
     delete[] str;
 }
@@ -174,11 +206,14 @@ void Planilha::close_planilha(){
 }
 
 bool Planilha::hasEnoughSpaceLine(int line, int height){
-    return (line*cellsDim.height + (int)ceil(legendaShift.height*2) - 1) < (displayShift.line+height - inputBox.height);
+    height = height - (legendaShift.height + inputBox.height + 3);
+
+    return (line*cellsDim.height) < (displayShift.line*cellsDim.height+height);
 }
 
 bool Planilha::hasEnoughSpaceColumn(int column, int width){
-    return (column*cellsDim.width + (int)ceil(legendaShift.width*2) - 1) < (displayShift.column+width);
+    width = width - (legendaShift.width + 2);
+    return (column*cellsDim.width) < (displayShift.column*cellsDim.width+width);
 }
 
 void Planilha::drawInputBox(){
@@ -193,5 +228,24 @@ void Planilha::drawInputBox(){
     }
 }
 
+bool Planilha::isCellCursorWhitinDisplayVertical(){
+    int height = caca_get_canvas_height(canvas) - (legendaShift.height*2  + inputBox.height) - 1;
+
+    int line = cellCursor.line*cellsDim.height;
+
+    return line >= displayShift.line*cellsDim.height && line <= (displayShift.line*cellsDim.height+height);
+}
+
+bool Planilha::isCellCursorWhitinDisplayHorizontal(){
+    int width = caca_get_canvas_width(canvas) - legendaShift.width;
+
+    int column = cellCursor.column*cellsDim.width;
+
+    return column >= displayShift.column*cellsDim.width && column <= (displayShift.column*cellsDim.width+width);
+}
+
+
+
 // TODO: Input box, criar a variavel pra ter a posicao da celula selecionada
 // e colorir ela. Tbm tem q tratar o texto dentor da inputBox
+// Nao ta mostrando o Z

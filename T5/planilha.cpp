@@ -1,20 +1,69 @@
 #include <map>
 #include <iostream>
 #include <cmath>
+#include <cctype>
 #include "planilha.hpp"
 #include "celula.hpp"
 #include "util.hpp"
 
 using namespace std;
 
+void InputBox::focus(Celula cell){
+    isActive = true;
+    cellRefer = cell.pos;
+    input = cell.formula;
+    cursor.pos.column = input.size();
+}
+
+void InputBox::defocus(){
+    isActive = false;
+    input = "";
+    cursor.pos.column = input.size();
+}
+
+void InputBox::moveCursorRight(){
+    if(cursor.pos.column+3 < dim.width){
+        if(cursor.pos.column+cursorShiftX+1 <= static_cast<int>(input.size())){
+           cursor.pos.column++;
+        }
+    } else {
+        if(cursor.pos.column+cursorShiftX+1 <= static_cast<int>(input.size())){
+           cursorShiftX++;
+        }
+    }
+}
+
+void InputBox::moveCursorLeft(){
+    if(cursor.pos.column > 0){
+        cursor.pos.column--;
+    } else if(cursorShiftX > 0) {
+        cursorShiftX--;
+        if(cursorShiftX > 0){
+            cursorShiftX--;
+        }
+    }
+}
+
+bool InputBox::isCursorAtTheEndOfString(){
+    return (cursor.pos.column + cursorShiftX) == static_cast<int>(input.size());
+}
+
+void InputBox::insertChar(char letter){
+    input.insert(cursor.pos.column + cursorShiftX, 1, letter);
+    moveCursorRight();
+}
+
 void Planilha::init(){
     //INITIALIZE VARIABLES
     cellsDim = {width: 8, height: 3};
     cellCursor = {0,0};
+    inputBox.cursor = {Position{0, 0}, true, clock()};
     shouldExit = false;
     displayShift = {0, 0};
     legendaShift = cellsDim;
-    inputBox = {width: 40, height: 3};
+    inputBox.dim = {width: 40, height: 3};
+    inputBox.isActive = false;
+
 
     // INITIALIZE CANVAS
     display = caca_create_display(NULL);
@@ -62,33 +111,46 @@ void Planilha::handle_events(){
 }
 
 void Planilha::handle_key_press(caca_event_t ev){
+    char* letter = new char;
     if(caca_get_event_type(&ev) == CACA_EVENT_KEY_PRESS){//Double check
         int caca_key = caca_get_event_key_ch(&ev);
         switch (caca_key) {
             case CACA_KEY_UP:
-                cursor_up();
+                if(!inputBox.isActive){
+                    cursorCellUp();
+                }
                 break;
             case CACA_KEY_RIGHT:
-                cursor_right();
+                if(!inputBox.isActive){
+                    cursorCellRight();
+                } else {
+                    inputBox.moveCursorRight();
+                }
                 break;
             case CACA_KEY_DOWN:
-                cursor_down();
+                if(!inputBox.isActive){
+                    cursorCellDown();
+                }
                 break;
             case CACA_KEY_LEFT:
-                cursor_left();
+                if(!inputBox.isActive){
+                    cursorCellLeft();
+                } else {
+                    inputBox.moveCursorLeft();
+                }
                 break;
             case CACA_KEY_ESCAPE:
-                close_planilha();
+                closePlanilha();
                 break;
-            // case CACA_KEY_BACKSPACE:
-            //     erase_char(ERASE_BACKWARD);
-            //     break;
-            // case CACA_KEY_DELETE:
-            //     erase_char(ERASE_FORWARD);
-            //     break;
-            // case CACA_KEY_CTRL_X:
-            //     recorta_linha();
-            //     break;
+            case CACA_KEY_RETURN:
+                inputBox.focus(cells.at(position2address(cellCursor)));
+                break;
+            case CACA_KEY_BACKSPACE:
+                eraseChar(ERASE_BACKWARD);
+                break;
+            case CACA_KEY_DELETE:
+                eraseChar(ERASE_FORWARD);
+                break;
             // case CACA_KEY_CTRL_V:
             //     cola_linha();
             //     break;
@@ -102,16 +164,30 @@ void Planilha::handle_key_press(caca_event_t ev){
             //     salva(filename_output);
             //     break;
             default:
-                cout << "Default " << (char)caca_key << endl;
-                // if(is_printable(caca_key)) {
-                //     insere_char(caca_key);
-                // }
-                // break;
+                caca_get_event_key_utf8(&ev, letter);
+                hadleCharInput(*letter);
+                break;
         }
+    }
+    delete letter;
+}
+
+void Planilha::hadleCharInput(char letter){
+    if(isdigit(letter)){//Is a number
+        inputBox.insertChar(letter);
+        return;
+    }
+
+    switch (toupper(letter)){
+        case 'Q':
+            inputBox.defocus();
+            break;
+        default:
+            break;
     }
 }
 
-void Planilha::cursor_up(){
+void Planilha::cursorCellUp(){
     if(cellCursor.line > 0){
         cellCursor.line--;
         if(!isCellCursorWhitinDisplayVertical()){
@@ -120,7 +196,7 @@ void Planilha::cursor_up(){
     }
 };
 
-void Planilha::cursor_right(){
+void Planilha::cursorCellRight(){
     if(cellCursor.column+1 < columnsSize){
         cellCursor.column++;
         if(!isCellCursorWhitinDisplayHorizontal()){
@@ -129,7 +205,7 @@ void Planilha::cursor_right(){
     }
 };
 
-void Planilha::cursor_down(){
+void Planilha::cursorCellDown(){
     if(cellCursor.line+1 < linesSize){
         cellCursor.line++;
         if(!isCellCursorWhitinDisplayVertical()){
@@ -138,7 +214,7 @@ void Planilha::cursor_down(){
     }
 };
 
-void Planilha::cursor_left(){
+void Planilha::cursorCellLeft(){
     if(cellCursor.column > 0){
         cellCursor.column--;
         if(!isCellCursorWhitinDisplayHorizontal()){
@@ -201,12 +277,12 @@ void Planilha::drawCellOnDisplay(Position pos, Celula cell){
     delete[] str;
 }
 
-void Planilha::close_planilha(){
+void Planilha::closePlanilha(){
     shouldExit = true;
 }
 
 bool Planilha::hasEnoughSpaceLine(int line, int height){
-    height = height - (legendaShift.height + inputBox.height + 3);
+    height = height - (legendaShift.height + inputBox.dim.height + 3);
 
     return (line*cellsDim.height) < (displayShift.line*cellsDim.height+height);
 }
@@ -218,22 +294,29 @@ bool Planilha::hasEnoughSpaceColumn(int column, int width){
 
 void Planilha::drawInputBox(){
     int height = caca_get_canvas_height(canvas);
-    inputBox.width = caca_get_canvas_width(canvas) - legendaShift.width;
-    inputBox.width = inputBox.width > 0 ? inputBox.width : 0;
+    inputBox.dim.width = caca_get_canvas_width(canvas) - legendaShift.width;
+    inputBox.dim.width = inputBox.dim.width > 0 ? inputBox.dim.width : 0;
 
-    Position drawPos = {line: height - inputBox.height, column: legendaShift.width};
+    inputBox.pos = {line: height - inputBox.dim.height, column: legendaShift.width};
 
-    if((drawPos.line - legendaShift.height) > 0){
-        caca_draw_cp437_box(canvas, drawPos.column, drawPos.line, inputBox.width, inputBox.height);
+    if((inputBox.pos.line - legendaShift.height) > 0){
+        caca_draw_cp437_box(canvas, inputBox.pos.column, inputBox.pos.line, inputBox.dim.width, inputBox.dim.height);
+    }
+
+    if(inputBox.isActive){
+        drawInputCursor();
+        drawInputContent();
+    } else {
+        controlCursorVisibility();
     }
 }
 
 bool Planilha::isCellCursorWhitinDisplayVertical(){
-    int height = caca_get_canvas_height(canvas) - (legendaShift.height*2  + inputBox.height) - 1;
+    int height = caca_get_canvas_height(canvas) - (legendaShift.height*2  + inputBox.dim.height);
 
     int line = cellCursor.line*cellsDim.height;
 
-    return line >= displayShift.line*cellsDim.height && line <= (displayShift.line*cellsDim.height+height);
+    return line >= displayShift.line*cellsDim.height && line < (displayShift.line*cellsDim.height+height);
 }
 
 bool Planilha::isCellCursorWhitinDisplayHorizontal(){
@@ -241,11 +324,50 @@ bool Planilha::isCellCursorWhitinDisplayHorizontal(){
 
     int column = cellCursor.column*cellsDim.width;
 
-    return column >= displayShift.column*cellsDim.width && column <= (displayShift.column*cellsDim.width+width);
+    return column >= displayShift.column*cellsDim.width && column < (displayShift.column*cellsDim.width+width);
 }
 
+void Planilha::drawInputCursor(){
+    if(get_elapsed_time(inputBox.cursor.clock_begin) >= 0.08){
+        inputBox.cursor.clock_begin = clock();//Reset time
+        inputBox.cursor.showing = !inputBox.cursor.showing;
+    }
 
+    controlCursorVisibility();
+    caca_gotoxy(canvas, inputBox.cursor.pos.column + inputBox.pos.column + 1, inputBox.pos.line + inputBox.dim.height / 2);
+}
 
-// TODO: Input box, criar a variavel pra ter a posicao da celula selecionada
-// e colorir ela. Tbm tem q tratar o texto dentor da inputBox
-// Nao ta mostrando o Z
+void Planilha::drawInputContent(){
+    string substr = inputBox.input.substr(inputBox.cursorShiftX, inputBox.dim.width - 2);
+    caca_put_str(canvas, inputBox.pos.column + 1, inputBox.pos.line + inputBox.dim.height / 2, substr.c_str());
+}
+
+void Planilha::controlCursorVisibility(){
+    int flag_display_cursor = inputBox.cursor.showing && inputBox.isActive ? 1 : 0;
+    caca_set_cursor(display, flag_display_cursor);
+}
+
+void Planilha::eraseChar(int direction){
+    if(!inputBox.isActive) return;
+
+    int cursorPosX = inputBox.cursor.pos.column + inputBox.cursorShiftX;
+    string s = inputBox.input;
+
+    if(direction == ERASE_BACKWARD){
+        if(cursorPosX > 0){
+            if(s.size() > 0 && cursorPosX > 0){
+                s.erase(s.begin() + cursorPosX - 1);
+                inputBox.input = s;
+            }
+        }
+        inputBox.moveCursorLeft();
+    } else {//ERASE_FORWARD
+        if(!inputBox.isCursorAtTheEndOfString()) {
+            string s = inputBox.input;
+            if(s.size() > 0){
+                s.erase(s.begin() + cursorPosX);
+                inputBox.input = s;
+            }
+        }
+    }
+}

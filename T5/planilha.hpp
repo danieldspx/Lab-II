@@ -5,6 +5,26 @@
 #include "celula.hpp"
 #include "structs.hpp"
 
+const int ERASE_FORWARD = 1;
+const int ERASE_BACKWARD = -1;
+
+struct InputBox {
+    Dimension dim;
+    Position pos;
+    Position cellRefer;
+    Cursor cursor;
+    std::string input;
+    bool isActive;
+    int cursorShiftX;
+
+    void focus(Celula cell);
+    void defocus();
+    void moveCursorRight();
+    void moveCursorLeft();
+    void insertChar(char letter);
+    bool isCursorAtTheEndOfString();
+};
+
 struct Planilha {
     caca_canvas_t *canvas;
     caca_display_t *display;
@@ -15,7 +35,7 @@ struct Planilha {
     std::map<std::string, Celula> cells;
     Dimension cellsDim;
     Dimension legendaShift;
-    Dimension inputBox;
+    InputBox inputBox;
     Position displayShift;
     Position cellCursor;
     bool shouldExit;
@@ -26,17 +46,22 @@ struct Planilha {
     void update();
     void handle_events();
     void handle_key_press(caca_event_t ev);
-    void cursor_up();
-    void cursor_right();
-    void cursor_down();
-    void cursor_left();
+    void hadleCharInput(char letter);
+    void cursorCellUp();
+    void cursorCellRight();
+    void cursorCellDown();
+    void cursorCellLeft();
     void drawLegenda();
     void drawCells();
-    void close_planilha();
+    void closePlanilha();
     void drawCellOnDisplay(Position pos, Celula cell);
     bool hasEnoughSpaceLine(int line, int height);
     bool hasEnoughSpaceColumn(int column, int width);
     void drawInputBox();
     bool isCellCursorWhitinDisplayVertical();
     bool isCellCursorWhitinDisplayHorizontal();
+    void drawInputCursor();
+    void drawInputContent();
+    void controlCursorVisibility();
+    void eraseChar(int direction);
 };

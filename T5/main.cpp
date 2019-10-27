@@ -22,6 +22,10 @@ int main(){
 
     Planilha planilha;
 
+    //Enter = Entra no modo de edicao da celula -- Se estiver na celula ele salva o valor
+    //Q = Sai do modo de edicao da celula
+
+
     planilha.init();
     while(!planilha.should_exit()){
         planilha.update();

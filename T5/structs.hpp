@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ctime>
+
 struct Position {
     int line;
     int column;
@@ -12,4 +14,10 @@ struct Position {
 struct Dimension {
     int width;
     int height;
+};
+
+struct Cursor {
+    Position pos;
+    bool showing;
+    clock_t clock_begin;
 };

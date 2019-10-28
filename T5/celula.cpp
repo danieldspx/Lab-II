@@ -6,6 +6,7 @@
 #include <regex>
 #include <map>
 #include <algorithm>
+#include <exception>
 
 using namespace std;
 
@@ -40,8 +41,7 @@ void Celula::insert(string str, map<string, Celula>& cellsRef){
     try{
         _processFormula(cellsRef);
     } catch (const char* msg){
-        _setError();
-        _propaganteErrorOnDependentsOfMe(cellsRef);
+        _setError(cellsRef);
         cerr << "Error: " << msg << endl;
     }
 }
@@ -56,9 +56,15 @@ double Celula::getVal(map<string, Celula>& cellsRef){
         }
     }
 
-    _setError();
-    if(isBeingCalculated) throw "Circular dependency";
-    if(hasError) throw "Syntax error";
+    _setError(cellsRef);    
+    if(isBeingCalculated){
+        cout<< "Willl throw " << position2address(pos) << endl;
+        throw "Circular dependency";
+    }
+    if(hasError){
+        cout<< "Willl throw " << position2address(pos) << endl;
+        throw "Syntax error";
+    }
 
     return 0;
 }
@@ -77,6 +83,7 @@ void Celula::_removeDependent(string address){
 }
 
 void Celula::_processFormula(map<string, Celula>& cellsRef){
+    string thisCellAddress = position2address(pos);
     isBeingCalculated = true;
     pristine = false;
     calc.reset();
@@ -97,7 +104,12 @@ void Celula::_processFormula(map<string, Celula>& cellsRef){
     references = _extractReferences(copyFormula);
     formulaSequence = _extractSequenceSymbolNumber(copyFormula);
 
-    string thisCellAddress = position2address(pos);
+    // cout << "ENTRANDO NA FORMULA " << thisCellAddress << endl;
+    // if(cellsRef.at(thisCellAddress).isBeingCalculated){
+    //     cout << thisCellAddress << " isBeingCalculated\n";
+    // } else {
+    //     cout << thisCellAddress << " NAO isBeingCalculated\n";
+    // }
 
     if(!dependOnThem.empty()){
         for(auto& addr: dependOnThem){//Tell cells that it does not depend on them (maybe it still depends for some of them)
@@ -115,6 +127,8 @@ void Celula::_processFormula(map<string, Celula>& cellsRef){
         }
     }
 
+    _propaganteChangeOnDependentsOfMe(cellsRef);
+
     for(auto it = formulaSequence.begin(); it != formulaSequence.end(); it++){
         if(TYPE_SEQUENCE_SYMBOL.at(0) == *it){
             calc.operador(symbols.at(0));
@@ -123,43 +137,59 @@ void Celula::_processFormula(map<string, Celula>& cellsRef){
             calc.operando(numbers.at(0));
             numbers.erase(numbers.begin());
         } else{
-            double valOfReference = cellsRef.at(references.at(0)).getVal(cellsRef);
-            calc.operando(valOfReference);
-            references.erase(references.begin());
+            try{
+                // cout << "Vamo buscar " << references.at(0) << " - " << cellsRef.at(references.at(0)).isBeingCalculated << endl;
+                double valOfReference = cellsRef.at(references.at(0)).getVal(cellsRef);
+                // cout << "Cabou de buscar " << references.at(0) << " - " << cellsRef.at(references.at(0)).isBeingCalculated << endl;
+                calc.operando(valOfReference);
+                references.erase(references.begin());
+            } catch (const char* msg){
+                cerr << "Erro: " << msg << endl;
+                _setError(cellsRef);
+                break;
+            }
         }
     }
 
-    if(calc.fim() == false){//Syntax erorr
-        _setError();
-        val = 0;
-    } else {
-        val = calc.resultado();
+    if(!hasError){
+        if(calc.fim() == false){//Syntax erorr
+            _setError(cellsRef);
+            val = 0;
+        } else {
+            val = calc.resultado();
+        }
     }
 
+    // cout << "TO SINDO DE " << thisCellAddress << " - TAVA " << isBeingCalculated << endl; 
     isBeingCalculated = false;
     pristine = true;
     calc.reset();
-    _propaganteChangeOnDependentsOfMe(cellsRef);
 }
 
 void Celula::_propaganteChangeOnDependentsOfMe(map<string, Celula>& cellsRef){
     for(auto& addr: dependentsOfMe){
-        cellsRef.at(addr)._shouldUpdate();
+        if(cellsRef.at(addr).pristine){//Oly propagate if it has no error already
+            cellsRef.at(addr)._shouldUpdate(cellsRef);
+        }
     }
 }
 
 void Celula::_propaganteErrorOnDependentsOfMe(map<string, Celula>& cellsRef){
     for(auto& addr: dependentsOfMe){
-        cellsRef.at(addr)._setError();
+        if(!cellsRef.at(addr).hasError){//Oly propagate if it has no error already
+            cellsRef.at(addr)._setError(cellsRef);
+        }
     }
 }
 
-void Celula::_shouldUpdate(){
+void Celula::_shouldUpdate(map<string, Celula>& cellsRef){
     resetState();
+    _propaganteChangeOnDependentsOfMe(cellsRef);
 }
 
-void Celula::_setError(){
+void Celula::_setError(map<string, Celula>& cellsRef){
     hasError = true;
+    _propaganteErrorOnDependentsOfMe(cellsRef);
 }
 
 vector<double> Celula::_extractNumbers(string target){

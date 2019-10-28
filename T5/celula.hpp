@@ -18,16 +18,25 @@ struct Celula {
     Calculadora<double> calc;
     string formula;
     string address;
+    vector<string> dependentsOfMe;
+    vector<string> dependOnThem;
     double val; //Stores the result of the formula
     bool hasError;
     bool isBeingCalculated;
     bool pristine;
 
     void init(Position posInitial, string addr, double valInitial); //Initialize a new Cell
+    void resetState(); //Initialize a new Cell
     void insert(double num);
     void insert(string str, map<string, Celula>& cellsRef);
     void _processFormula(map<string, Celula>& cellsRef);
     double getVal(map<string, Celula>& cellsRef);
+    void _insertDependent(string address);
+    void _removeDependent(string address);
+    void _propaganteChangeOnDependentsOfMe(map<string, Celula>& cellsRef);
+    void _propaganteErrorOnDependentsOfMe(map<string, Celula>& cellsRef);
+    void _shouldUpdate();
+    void _setError();
     std::vector<double> _extractNumbers(std::string target);
     std::vector<char> _extractSymbols(std::string target);
     std::string _extractSequenceSymbolNumber(std::string target);

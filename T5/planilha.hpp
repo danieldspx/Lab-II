@@ -54,7 +54,7 @@ struct Planilha {
     void drawLegenda();
     void drawCells();
     void closePlanilha();
-    void drawCellOnDisplay(Position pos, Celula cell);
+    void drawCellOnDisplay(Position pos, Celula& cell);
     bool hasEnoughSpaceLine(int line, int height);
     bool hasEnoughSpaceColumn(int column, int width);
     void drawInputBox();

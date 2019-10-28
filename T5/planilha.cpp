@@ -265,16 +265,18 @@ void Planilha::drawCells(){
     }
 }
 
-void Planilha::drawCellOnDisplay(Position pos, Celula cell){
+void Planilha::drawCellOnDisplay(Position pos, Celula& cell){
     char *str = new char[5];
-    try{
-        sprintf(str, "%.0lf", cell.getVal(cells));
-    } catch (const char* msg) {
-        cerr << "Error: " << msg << endl;
-    }
 
     if(cell.hasError){
        sprintf(str, "%s", "#ERR"); 
+    } else {
+        try{
+            sprintf(str, "%.0lf", cell.getVal(cells));
+        } catch (const char* msg) {
+            sprintf(str, "%s", "#ERR");
+            cerr << "Error: " << msg << endl;
+        }
     }
     
     pos.column = pos.column*cellsDim.width + legendaShift.width;

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 #include <cctype>
+#include <regex>
 #include "planilha.hpp"
 #include "celula.hpp"
 #include "util.hpp"
@@ -140,10 +141,19 @@ void Planilha::handle_key_press(caca_event_t ev){
                 }
                 break;
             case CACA_KEY_ESCAPE:
-                closePlanilha();
+                if(!inputBox.isActive){
+                    closePlanilha();
+                } else {
+                    inputBox.defocus();
+                }
                 break;
             case CACA_KEY_RETURN:
-                inputBox.focus(cells.at(position2address(cellCursor)));
+                if(!inputBox.isActive){
+                    inputBox.focus(cells.at(position2address(cellCursor)));
+                } else {
+                    saveInputContentOnCell();
+                    inputBox.defocus();
+                }
                 break;
             case CACA_KEY_BACKSPACE:
                 eraseChar(ERASE_BACKWARD);
@@ -173,17 +183,11 @@ void Planilha::handle_key_press(caca_event_t ev){
 }
 
 void Planilha::hadleCharInput(char letter){
-    if(isdigit(letter)){//Is a number
+    std::string target(1, letter);
+    std::smatch match;
+    std::regex regExp("[\\./*^+\\-\\(\\)A-Z\\d+]");
+    if(std::regex_search (target, match, regExp)){
         inputBox.insertChar(letter);
-        return;
-    }
-
-    switch (toupper(letter)){
-        case 'Q':
-            inputBox.defocus();
-            break;
-        default:
-            break;
     }
 }
 
@@ -262,8 +266,17 @@ void Planilha::drawCells(){
 }
 
 void Planilha::drawCellOnDisplay(Position pos, Celula cell){
-    char *str = new char[2];
-    sprintf(str, "%.0lf", cell.val);
+    char *str = new char[5];
+    try{
+        sprintf(str, "%.0lf", cell.getVal(cells));
+    } catch (const char* msg) {
+        cerr << "Error: " << msg << endl;
+    }
+
+    if(cell.hasError){
+       sprintf(str, "%s", "#ERR"); 
+    }
+    
     pos.column = pos.column*cellsDim.width + legendaShift.width;
     pos.line = pos.line*cellsDim.height + legendaShift.height;
 
@@ -370,4 +383,11 @@ void Planilha::eraseChar(int direction){
             }
         }
     }
+}
+
+void Planilha::saveInputContentOnCell(){
+    if(inputBox.input.at(0) != '='){
+        inputBox.input.insert(0, "=");
+    }
+    cells.at(position2address(cellCursor)).insert(inputBox.input, cells);
 }

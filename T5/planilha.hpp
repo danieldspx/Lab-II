@@ -64,4 +64,5 @@ struct Planilha {
     void drawInputContent();
     void controlCursorVisibility();
     void eraseChar(int direction);
+    void saveInputContentOnCell();
 };

@@ -68,8 +68,7 @@ struct Calculadora {
     void insertionSort(std::vector<Operador> &array){
         int cursor;
         Operador key;
-        bool end;
-        for(int key_pos = 1; key_pos < array.size(); key_pos++){
+        for(int key_pos = 1; key_pos < static_cast<int>(array.size()); key_pos++){
             key = array[key_pos];
             cursor = key_pos - 1;
             while(cursor >= 0 && array[cursor] > key){
@@ -101,7 +100,7 @@ struct Calculadora {
 
         if(shadowOperadores.empty()) return;
 
-        if(count+1 > operandos.size()){
+        if(count+1 > static_cast<int>(operandos.size())){
             hasSyntaxError = true;
             return;
         }
@@ -137,7 +136,7 @@ struct Calculadora {
             return;
         }
 
-        for(int i = 0; i < orderedOperadores.size(); i++){
+        for(int i = 0; i < static_cast<int>(orderedOperadores.size()); i++){
             for(int pos = 0; shadowOperadores.size(); pos++){
                 if(shadowOperadores.at(pos) == orderedOperadores.at(i).op){
                     //Send data to stack
@@ -157,7 +156,7 @@ struct Calculadora {
 
                     //Coloca no `shadowOperandos` pra continuar o processo e remove o resultado de `operandos`
                     insertInPos(shadowOperandos, pos, operandos.top());
-                    if(i != orderedOperadores.size() - 1){//Se nao e a ultima operacao, entao remove da pilha operandos
+                    if(i != static_cast<int>(orderedOperadores.size()) - 1){//Se nao e a ultima operacao, entao remove da pilha operandos
                         operandos.pop();
                     }
 

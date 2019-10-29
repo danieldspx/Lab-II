@@ -102,6 +102,10 @@ void Celula::_processFormula(map<string, Celula>& cellsRef){
     references = _extractReferences(copyFormula);
     formulaSequence = _extractSequenceSymbolNumber(copyFormula);
 
+    if(numbers.empty() && symbols.empty() && references.empty()){
+        throw SyntaxException();
+    }
+
     if(!dependOnThem.empty()){
         for(auto& addr: dependOnThem){//Tell cells that it does not depend on them (maybe it still depends for some of them)
             if(addr != thisCellAddress){

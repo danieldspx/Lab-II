@@ -62,7 +62,7 @@ void Planilha::init(){
     inputBox.cursor = {Position{0, 0}, true, clock()};
     shouldExit = false;
     displayShift = {0, 0};
-    legendaShift = cellsDim;
+    legendaShift = {width: 8, height: 3};
     inputBox.dim = {width: 40, height: 3};
     inputBox.isActive = false;
 
@@ -186,7 +186,7 @@ void Planilha::handle_key_press(caca_event_t ev){
 void Planilha::hadleCharInput(char letter){
     std::string target(1, letter);
     std::smatch match;
-    std::regex regExp("[\\./*^+\\-\\(\\)A-Z\\d+]");
+    std::regex regExp("[\\./*=^+\\-\\(\\)A-Z\\d+]");
     if(std::regex_search (target, match, regExp)){
         inputBox.insertChar(letter);
     }
@@ -270,7 +270,7 @@ void Planilha::drawCellOnDisplay(Position pos, Celula& cell){
     char *str = new char[5];
 
     try{
-        if(!cell.hasError) sprintf(str, "%.0lf", cell.getVal(cells));
+        if(!cell.hasError) sprintf(str, "%.2lf", cell.getVal(cells));
     } catch (DepedencyException& e){
         cell._setError(cells, DepedencyException::TYPE);
         cerr << "Cell " << position2address(cell.pos) << ": Error " << e.what() << endl;
@@ -283,7 +283,7 @@ void Planilha::drawCellOnDisplay(Position pos, Celula& cell){
         if(cell.raisedError == DepedencyException::TYPE){
             sprintf(str, "%s", "#RefErr"); 
         } else if(cell.raisedError == SyntaxException::TYPE){
-            sprintf(str, "%s", "#SyntxErr");
+            sprintf(str, "%s", "#SytxErr");
         }
     }
     
@@ -361,6 +361,9 @@ void Planilha::drawInputCursor(){
 }
 
 void Planilha::drawInputContent(){
+    // if(){
+        
+    // }
     string substr = inputBox.input.substr(inputBox.cursorShiftX, inputBox.dim.width - 2);
     caca_put_str(canvas, inputBox.pos.column + 1, inputBox.pos.line + inputBox.dim.height / 2, substr.c_str());
 }
@@ -399,5 +402,9 @@ void Planilha::saveInputContentOnCell(){
     if(inputBox.input.at(0) != '='){
         inputBox.input.insert(0, "=");
     }
+    if(inputBox.input == "="){
+        inputBox.input.push_back('0');
+    }
     cells.at(position2address(cellCursor)).insert(inputBox.input, cells);
+    inputBox.input = "";
 }

@@ -13,6 +13,7 @@ struct Celula {
     const string TYPE_SEQUENCE_SYMBOL = "0";
     const string TYPE_SEQUENCE_NUMBER = "1";
     const string TYPE_SEQUENCE_REFERENCE = "2";
+    static const int DOUBLE_PRECISION = 2;
 
     Position pos;
     Calculadora<double> calc;

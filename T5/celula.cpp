@@ -10,8 +10,6 @@
 
 using namespace std;
 
-const int DOUBLE_PRECISION = 2;
-
 void Celula::init(Position posInitial, string addr, double valInitial = 0){
     hasError = false;
     address = addr;
@@ -48,12 +46,14 @@ void Celula::insert(string str, map<string, Celula>& cellsRef){
 }
 
 double Celula::getVal(map<string, Celula>& cellsRef){
-    if(pristine) return val;
+    if(!hasError){
+        if(pristine) return val;
 
-    if(!isBeingCalculated && !hasError){ //Needs update (If pristine is true, it will never reach this point)
-        _processFormula(cellsRef);
-        if(!hasError && pristine && !isBeingCalculated){//If everything OK
-            return val;
+        if(!isBeingCalculated && !hasError){ //Needs update (If pristine is true, it will never reach this point)
+            _processFormula(cellsRef);
+            if(!hasError && pristine && !isBeingCalculated){//If everything OK
+                return val;
+            }
         }
     }
  
@@ -118,30 +118,38 @@ void Celula::_processFormula(map<string, Celula>& cellsRef){
 
     for(auto& addr: dependOnThem){//Tell cells that it depend on them
         if(addr != thisCellAddress){
-            cellsRef.at(addr)._insertDependent(thisCellAddress);
+            try{
+                cellsRef.at(addr)._insertDependent(thisCellAddress);
+            } catch(std::out_of_range& e){//Meaning that the reference is wrong, therefore Syntax Error
+                _setError(cellsRef, SyntaxException::TYPE);
+            }
         }
     }
 
     _propaganteChangeOnDependentsOfMe(cellsRef);
 
-    for(auto it = formulaSequence.begin(); it != formulaSequence.end(); it++){
-        if(TYPE_SEQUENCE_SYMBOL.at(0) == *it){
-            calc.operador(symbols.at(0));
-            symbols.erase(symbols.begin());
-        } else if (TYPE_SEQUENCE_NUMBER.at(0) == *it){
-            calc.operando(numbers.at(0));
-            numbers.erase(numbers.begin());
-        } else{
-            try{
-                double valOfReference = cellsRef.at(references.at(0)).getVal(cellsRef);
-                calc.operando(valOfReference);
-                references.erase(references.begin());
-            } catch (DepedencyException& e){
-                _setError(cellsRef, DepedencyException::TYPE);
-                break;
-            } catch (SyntaxException& e){
+    if(!hasError){
+        for(auto it = formulaSequence.begin(); it != formulaSequence.end(); it++){
+            if(TYPE_SEQUENCE_SYMBOL.at(0) == *it){
+                calc.operador(symbols.at(0));
+                symbols.erase(symbols.begin());
+            } else if (TYPE_SEQUENCE_NUMBER.at(0) == *it){
+                calc.operando(numbers.at(0));
+                numbers.erase(numbers.begin());
+            } else if (TYPE_SEQUENCE_SYMBOL.at(0) == *it){
+                try{
+                    double valOfReference = cellsRef.at(references.at(0)).getVal(cellsRef);
+                    calc.operando(valOfReference);
+                    references.erase(references.begin());
+                } catch (DepedencyException& e){
+                    _setError(cellsRef, DepedencyException::TYPE);
+                    break;
+                } catch (SyntaxException& e){
+                    _setError(cellsRef, SyntaxException::TYPE);
+                    break;
+                }
+            } else {
                 _setError(cellsRef, SyntaxException::TYPE);
-                break;
             }
         }
     }

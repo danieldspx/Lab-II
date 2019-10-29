@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 #include <cctype>
+#include <sstream>
 #include <regex>
 #include "planilha.hpp"
 #include "celula.hpp"
@@ -328,10 +329,10 @@ void Planilha::drawInputBox(){
 
     if(inputBox.isActive){
         drawInputCursor();
-        drawInputContent();
     } else {
         controlCursorVisibility();
     }
+    drawInputContent();
 }
 
 bool Planilha::isCellCursorWhitinDisplayVertical(){
@@ -361,11 +362,36 @@ void Planilha::drawInputCursor(){
 }
 
 void Planilha::drawInputContent(){
-    // if(){
-        
-    // }
-    string substr = inputBox.input.substr(inputBox.cursorShiftX, inputBox.dim.width - 2);
-    caca_put_str(canvas, inputBox.pos.column + 1, inputBox.pos.line + inputBox.dim.height / 2, substr.c_str());
+    string substr = "";
+    if(inputBox.isActive){
+        substr = inputBox.input.substr(inputBox.cursorShiftX, inputBox.dim.width - 2);
+        caca_put_str(canvas, inputBox.pos.column + 1, inputBox.pos.line + inputBox.dim.height / 2, substr.c_str());
+    } else {
+        Celula selectedCell = cells.at(position2address(cellCursor));
+        if(!selectedCell.hasError){
+            try{
+                std::ostringstream out;
+                out.precision(Celula::DOUBLE_PRECISION);
+                out << "=" << std::fixed << selectedCell.getVal(cells);
+                substr = out.str();
+            } catch (DepedencyException& e){
+                selectedCell._setError(cells, DepedencyException::TYPE);
+                substr = e.what();
+            } catch (SyntaxException& e){
+                selectedCell._setError(cells, SyntaxException::TYPE);
+                substr = e.what();
+            }
+        } else {
+            if(selectedCell.raisedError == DepedencyException::TYPE){
+                substr = DepedencyException().what();
+            } else if(selectedCell.raisedError == SyntaxException::TYPE){
+                substr = SyntaxException().what();
+            }
+        }
+        caca_set_color_ansi(canvas, CACA_LIGHTRED, CACA_BLACK);
+        caca_put_str(canvas, inputBox.pos.column + 1, inputBox.pos.line + inputBox.dim.height / 2, substr.c_str());
+        caca_set_color_ansi(canvas, CACA_LIGHTGREEN, CACA_BLACK);
+    }
 }
 
 void Planilha::controlCursorVisibility(){
@@ -404,6 +430,9 @@ void Planilha::saveInputContentOnCell(){
     }
     if(inputBox.input == "="){
         inputBox.input.push_back('0');
+    }
+    if(inputBox.input == "+ASD984*/ASD2+62"){
+        cout << "Para" << endl;
     }
     cells.at(position2address(cellCursor)).insert(inputBox.input, cells);
     inputBox.input = "";

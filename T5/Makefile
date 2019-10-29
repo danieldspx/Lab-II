@@ -4,3 +4,6 @@ UTIL=util.cpp
 MAIN=main.cpp
 main: $(MAIN) $(CELULA) $(PLANILHA) $(UTIL)
 	g++ -std=c++11 $(MAIN) $(CELULA) $(PLANILHA) $(UTIL) -o bin/main -lcaca -Wall
+
+debug: $(MAIN) $(CELULA) $(PLANILHA) $(UTIL)
+	g++ -g -std=c++11 $(MAIN) $(CELULA) $(PLANILHA) $(UTIL) -o main -lcaca -Wall

@@ -1,12 +1,12 @@
 #include "celula.hpp"
 #include "util.hpp"
+#include "custom_exceptions.hpp"
 #include <iostream>
 #include <sstream>
 #include <vector>
 #include <regex>
 #include <map>
 #include <algorithm>
-#include <exception>
 
 using namespace std;
 
@@ -40,30 +40,28 @@ void Celula::insert(string str, map<string, Celula>& cellsRef){
     formula = str;
     try{
         _processFormula(cellsRef);
-    } catch (const char* msg){
-        _setError(cellsRef);
-        cerr << "Error: " << msg << endl;
+    } catch (DepedencyException& e){
+        _setError(cellsRef, DepedencyException::TYPE);
+    } catch (SyntaxException& e){
+        _setError(cellsRef, SyntaxException::TYPE);
     }
 }
 
 double Celula::getVal(map<string, Celula>& cellsRef){
     if(pristine) return val;
 
-    if(!isBeingCalculated && !hasError){ //Needs update
+    if(!isBeingCalculated && !hasError){ //Needs update (If pristine is true, it will never reach this point)
         _processFormula(cellsRef);
         if(!hasError && pristine && !isBeingCalculated){//If everything OK
             return val;
         }
     }
-
-    _setError(cellsRef);    
-    if(isBeingCalculated){
-        cout<< "Willl throw " << position2address(pos) << endl;
-        throw "Circular dependency";
+ 
+    if(isBeingCalculated || raisedError == DepedencyException::TYPE){
+        throw DepedencyException();
     }
-    if(hasError){
-        cout<< "Willl throw " << position2address(pos) << endl;
-        throw "Syntax error";
+    if(hasError || raisedError == SyntaxException::TYPE){
+        throw SyntaxException();
     }
 
     return 0;
@@ -85,7 +83,7 @@ void Celula::_removeDependent(string address){
 void Celula::_processFormula(map<string, Celula>& cellsRef){
     string thisCellAddress = position2address(pos);
     isBeingCalculated = true;
-    pristine = false;
+    resetState();
     calc.reset();
 
     string copyFormula = formula;
@@ -103,13 +101,6 @@ void Celula::_processFormula(map<string, Celula>& cellsRef){
     symbols = _extractSymbols(copyFormula);
     references = _extractReferences(copyFormula);
     formulaSequence = _extractSequenceSymbolNumber(copyFormula);
-
-    // cout << "ENTRANDO NA FORMULA " << thisCellAddress << endl;
-    // if(cellsRef.at(thisCellAddress).isBeingCalculated){
-    //     cout << thisCellAddress << " isBeingCalculated\n";
-    // } else {
-    //     cout << thisCellAddress << " NAO isBeingCalculated\n";
-    // }
 
     if(!dependOnThem.empty()){
         for(auto& addr: dependOnThem){//Tell cells that it does not depend on them (maybe it still depends for some of them)
@@ -138,14 +129,14 @@ void Celula::_processFormula(map<string, Celula>& cellsRef){
             numbers.erase(numbers.begin());
         } else{
             try{
-                // cout << "Vamo buscar " << references.at(0) << " - " << cellsRef.at(references.at(0)).isBeingCalculated << endl;
                 double valOfReference = cellsRef.at(references.at(0)).getVal(cellsRef);
-                // cout << "Cabou de buscar " << references.at(0) << " - " << cellsRef.at(references.at(0)).isBeingCalculated << endl;
                 calc.operando(valOfReference);
                 references.erase(references.begin());
-            } catch (const char* msg){
-                cerr << "Erro: " << msg << endl;
-                _setError(cellsRef);
+            } catch (DepedencyException& e){
+                _setError(cellsRef, DepedencyException::TYPE);
+                break;
+            } catch (SyntaxException& e){
+                _setError(cellsRef, SyntaxException::TYPE);
                 break;
             }
         }
@@ -153,14 +144,13 @@ void Celula::_processFormula(map<string, Celula>& cellsRef){
 
     if(!hasError){
         if(calc.fim() == false){//Syntax erorr
-            _setError(cellsRef);
+            _setError(cellsRef, SyntaxException::TYPE);
             val = 0;
         } else {
             val = calc.resultado();
         }
     }
 
-    // cout << "TO SINDO DE " << thisCellAddress << " - TAVA " << isBeingCalculated << endl; 
     isBeingCalculated = false;
     pristine = true;
     calc.reset();
@@ -168,16 +158,16 @@ void Celula::_processFormula(map<string, Celula>& cellsRef){
 
 void Celula::_propaganteChangeOnDependentsOfMe(map<string, Celula>& cellsRef){
     for(auto& addr: dependentsOfMe){
-        if(cellsRef.at(addr).pristine){//Oly propagate if it has no error already
+        if(cellsRef.at(addr).pristine || cellsRef.at(addr).hasError){//Oly propagate if it has no error already
             cellsRef.at(addr)._shouldUpdate(cellsRef);
         }
     }
 }
 
-void Celula::_propaganteErrorOnDependentsOfMe(map<string, Celula>& cellsRef){
+void Celula::_propaganteErrorOnDependentsOfMe(map<string, Celula>& cellsRef, const int errorType){
     for(auto& addr: dependentsOfMe){
-        if(!cellsRef.at(addr).hasError){//Oly propagate if it has no error already
-            cellsRef.at(addr)._setError(cellsRef);
+        if(!cellsRef.at(addr).hasError){//Only propagate if it has no error already
+            cellsRef.at(addr)._setError(cellsRef, errorType);
         }
     }
 }
@@ -187,9 +177,10 @@ void Celula::_shouldUpdate(map<string, Celula>& cellsRef){
     _propaganteChangeOnDependentsOfMe(cellsRef);
 }
 
-void Celula::_setError(map<string, Celula>& cellsRef){
+void Celula::_setError(map<string, Celula>& cellsRef, const int errorType){
     hasError = true;
-    _propaganteErrorOnDependentsOfMe(cellsRef);
+    raisedError = errorType;
+    _propaganteErrorOnDependentsOfMe(cellsRef, errorType);
 }
 
 vector<double> Celula::_extractNumbers(string target){

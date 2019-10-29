@@ -34,6 +34,7 @@ struct Calculadora {
         shadowOperadores.clear();
         orderedOperadores.clear();
         shadowOperandos.clear();
+        hasSyntaxError = false;
     }
 
     // destroi a calculadora, limpa as pilhas

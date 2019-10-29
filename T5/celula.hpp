@@ -24,9 +24,10 @@ struct Celula {
     bool hasError;
     bool isBeingCalculated;
     bool pristine;
+    int raisedError;
 
     void init(Position posInitial, string addr, double valInitial); //Initialize a new Cell
-    void resetState(); //Initialize a new Cell
+    void resetState();
     void insert(double num);
     void insert(string str, map<string, Celula>& cellsRef);
     void _processFormula(map<string, Celula>& cellsRef);
@@ -34,9 +35,9 @@ struct Celula {
     void _insertDependent(string address);
     void _removeDependent(string address);
     void _propaganteChangeOnDependentsOfMe(map<string, Celula>& cellsRef);
-    void _propaganteErrorOnDependentsOfMe(map<string, Celula>& cellsRef);
+    void _propaganteErrorOnDependentsOfMe(map<string, Celula>& cellsRef, const int errorType);
     void _shouldUpdate(map<string, Celula>& cellsRef);
-    void _setError(map<string, Celula>& cellsRef);
+    void _setError(map<string, Celula>& cellsRef, const int errorType);
     std::vector<double> _extractNumbers(std::string target);
     std::vector<char> _extractSymbols(std::string target);
     std::string _extractSequenceSymbolNumber(std::string target);

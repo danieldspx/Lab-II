@@ -6,6 +6,7 @@
 #include "planilha.hpp"
 #include "celula.hpp"
 #include "util.hpp"
+#include "custom_exceptions.hpp"
 
 using namespace std;
 
@@ -268,14 +269,21 @@ void Planilha::drawCells(){
 void Planilha::drawCellOnDisplay(Position pos, Celula& cell){
     char *str = new char[5];
 
+    try{
+        if(!cell.hasError) sprintf(str, "%.0lf", cell.getVal(cells));
+    } catch (DepedencyException& e){
+        cell._setError(cells, DepedencyException::TYPE);
+        cerr << "Cell " << position2address(cell.pos) << ": Error " << e.what() << endl;
+    } catch (SyntaxException& e){
+        cell._setError(cells, SyntaxException::TYPE);
+        cerr << "Cell " << position2address(cell.pos) << ": Error " << e.what() << endl;
+    }
+
     if(cell.hasError){
-       sprintf(str, "%s", "#ERR"); 
-    } else {
-        try{
-            sprintf(str, "%.0lf", cell.getVal(cells));
-        } catch (const char* msg) {
-            sprintf(str, "%s", "#ERR");
-            cerr << "Error: " << msg << endl;
+        if(cell.raisedError == DepedencyException::TYPE){
+            sprintf(str, "%s", "#RefErr"); 
+        } else if(cell.raisedError == SyntaxException::TYPE){
+            sprintf(str, "%s", "#SyntxErr");
         }
     }
     

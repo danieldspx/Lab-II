@@ -7,6 +7,7 @@
 #include <regex>
 #include <map>
 #include <algorithm>
+#include <string>
 
 using namespace std;
 
@@ -207,7 +208,7 @@ vector<double> Celula::_extractNumbers(string target){
     std::match_results<decltype(first)> match;
 
     while (std::regex_search(first, last, match, regExp)){
-        numbers.push_back(std::stod(match.str(),&sz));
+        numbers.push_back(std::stod(match.str() ,&sz));
         first = std::next(match.prefix().second, match.str().size());
     }
 

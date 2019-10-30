@@ -431,9 +431,6 @@ void Planilha::saveInputContentOnCell(){
     if(inputBox.input == "="){
         inputBox.input.push_back('0');
     }
-    if(inputBox.input == "+ASD984*/ASD2+62"){
-        cout << "Para" << endl;
-    }
     cells.at(position2address(cellCursor)).insert(inputBox.input, cells);
     inputBox.input = "";
 }

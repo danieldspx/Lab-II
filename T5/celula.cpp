@@ -127,7 +127,7 @@ void Celula::_processFormula(map<string, Celula>& cellsRef){
         }
     }
 
-    _propaganteChangeOnDependentsOfMe(cellsRef);
+    _propagateChangeOnDependentsOfMe(cellsRef);
 
     if(!hasError){
         for(auto it = formulaSequence.begin(); it != formulaSequence.end(); it++){
@@ -137,7 +137,7 @@ void Celula::_processFormula(map<string, Celula>& cellsRef){
             } else if (TYPE_SEQUENCE_NUMBER.at(0) == *it){
                 calc.operando(numbers.at(0));
                 numbers.erase(numbers.begin());
-            } else if (TYPE_SEQUENCE_SYMBOL.at(0) == *it){
+            } else if (TYPE_SEQUENCE_REFERENCE.at(0) == *it){
                 try{
                     double valOfReference = cellsRef.at(references.at(0)).getVal(cellsRef);
                     calc.operando(valOfReference);
@@ -169,7 +169,7 @@ void Celula::_processFormula(map<string, Celula>& cellsRef){
     calc.reset();
 }
 
-void Celula::_propaganteChangeOnDependentsOfMe(map<string, Celula>& cellsRef){
+void Celula::_propagateChangeOnDependentsOfMe(map<string, Celula>& cellsRef){
     for(auto& addr: dependentsOfMe){
         if(cellsRef.at(addr).pristine || cellsRef.at(addr).hasError){//Oly propagate if it has no error already
             cellsRef.at(addr)._shouldUpdate(cellsRef);
@@ -177,7 +177,7 @@ void Celula::_propaganteChangeOnDependentsOfMe(map<string, Celula>& cellsRef){
     }
 }
 
-void Celula::_propaganteErrorOnDependentsOfMe(map<string, Celula>& cellsRef, const int errorType){
+void Celula::_propagateErrorOnDependentsOfMe(map<string, Celula>& cellsRef, const int errorType){
     for(auto& addr: dependentsOfMe){
         if(!cellsRef.at(addr).hasError){//Only propagate if it has no error already
             cellsRef.at(addr)._setError(cellsRef, errorType);
@@ -187,13 +187,13 @@ void Celula::_propaganteErrorOnDependentsOfMe(map<string, Celula>& cellsRef, con
 
 void Celula::_shouldUpdate(map<string, Celula>& cellsRef){
     resetState();
-    _propaganteChangeOnDependentsOfMe(cellsRef);
+    _propagateChangeOnDependentsOfMe(cellsRef);
 }
 
 void Celula::_setError(map<string, Celula>& cellsRef, const int errorType){
     hasError = true;
     raisedError = errorType;
-    _propaganteErrorOnDependentsOfMe(cellsRef, errorType);
+    _propagateErrorOnDependentsOfMe(cellsRef, errorType);
 }
 
 vector<double> Celula::_extractNumbers(string target){

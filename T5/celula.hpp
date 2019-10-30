@@ -35,8 +35,8 @@ struct Celula {
     double getVal(map<string, Celula>& cellsRef);
     void _insertDependent(string address);
     void _removeDependent(string address);
-    void _propaganteChangeOnDependentsOfMe(map<string, Celula>& cellsRef);
-    void _propaganteErrorOnDependentsOfMe(map<string, Celula>& cellsRef, const int errorType);
+    void _propagateChangeOnDependentsOfMe(map<string, Celula>& cellsRef);
+    void _propagateErrorOnDependentsOfMe(map<string, Celula>& cellsRef, const int errorType);
     void _shouldUpdate(map<string, Celula>& cellsRef);
     void _setError(map<string, Celula>& cellsRef, const int errorType);
     std::vector<double> _extractNumbers(std::string target);

@@ -425,7 +425,7 @@ void Planilha::eraseChar(int direction){
 }
 
 void Planilha::saveInputContentOnCell(){
-    if(inputBox.input.at(0) != '='){
+    if(inputBox.input.empty() || inputBox.input.at(0) != '='){
         inputBox.input.insert(0, "=");
     }
     if(inputBox.input == "="){

@@ -6,4 +6,4 @@ main: $(MAIN) $(CELULA) $(PLANILHA) $(UTIL)
 	g++ -std=c++11 $(MAIN) $(CELULA) $(PLANILHA) $(UTIL) -o bin/main -lcaca -Wall
 
 debug: $(MAIN) $(CELULA) $(PLANILHA) $(UTIL)
-	g++ -g -std=c++11 $(MAIN) $(CELULA) $(PLANILHA) $(UTIL) -o main -lcaca -Wall
+	g++ -g -std=c++11 $(MAIN) $(CELULA) $(PLANILHA) $(UTIL) -o bin/main.debug -lcaca -Wall

@@ -148,9 +148,13 @@ void Celula::_processFormula(map<string, Celula>& cellsRef){
                 } catch (SyntaxException& e){
                     _setError(cellsRef, SyntaxException::TYPE);
                     break;
+                } catch (std::out_of_range& e){
+                    _setError(cellsRef, SyntaxException::TYPE);
+                    break;
                 }
             } else {
                 _setError(cellsRef, SyntaxException::TYPE);
+                break;
             }
         }
     }
@@ -197,17 +201,20 @@ void Celula::_setError(map<string, Celula>& cellsRef, const int errorType){
 }
 
 vector<double> Celula::_extractNumbers(string target){
-    std::regex regExp("\\d+(\\.\\d+)?");
+    std::regex regExp(R"(([A-Z]+\d+)|((\d+(\.\d+)?)(?![A-Z]+)))");
+    std::regex regExpReferences(R"(([A-Z]+\d+))");
 
     vector<double> numbers;
-    std::string::size_type sz;
     
     auto first = target.begin();
     auto last = target.end();
 
     std::match_results<decltype(first)> match;
+
     while (std::regex_search(first, last, match, regExp)){
-        numbers.push_back(std::stod(match.str() , &sz));
+        if(!regex_match(match.str(), regExpReferences)){//If isnt a referece like A1
+            numbers.push_back(std::stod(match.str(), nullptr));
+        }
         first = std::next(match.prefix().second, match.str().size());
     }
 
@@ -215,7 +222,7 @@ vector<double> Celula::_extractNumbers(string target){
 }
 
 vector<char> Celula::_extractSymbols(string target){
-    std::regex regExp("[/*^+\\-\\(\\)]");
+    std::regex regExp(R"([/*^+\-\(\)])");
 
     vector<char> symbols;
     
@@ -233,7 +240,7 @@ vector<char> Celula::_extractSymbols(string target){
 }
 
 vector<string> Celula::_extractReferences(string target){
-    std::regex regExp("[A-Z]+\\d+");
+    std::regex regExp(R"([A-Z]+\d+)");
 
     vector<string> references;
     
@@ -251,13 +258,13 @@ vector<string> Celula::_extractReferences(string target){
 }
 
 string Celula::_extractSequenceSymbolNumber(string target){
-    std::regex regNumbers("\\d+(\\.\\d+)?");
-    std::regex regSymbols("[/*^+\\-\\(\\)]");
-    std::regex regReferences("[A-Z]+\\d+");
+    std::regex regNumbers(R"((\d+(\.\d+)?)(?![@A-Z]+))");//@ refers to TYPE_SEQUENCE_REFERENCE
+    std::regex regSymbols(R"([/*^+\-\(\)])");
+    std::regex regReferences(R"(([A-Z]+\d+)(?![A-Z]+))");
 
-    target = std::regex_replace(target, regNumbers, TYPE_SEQUENCE_NUMBER);
     target = std::regex_replace(target, regReferences, TYPE_SEQUENCE_REFERENCE);
     target = std::regex_replace(target, regSymbols, TYPE_SEQUENCE_SYMBOL);
+    target = std::regex_replace(target, regNumbers, TYPE_SEQUENCE_NUMBER);
 
     return target;
 }

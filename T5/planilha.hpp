@@ -19,10 +19,12 @@ struct InputBox {
 
     void focus(Celula cell);
     void defocus();
-    void moveCursorRight();
-    void moveCursorLeft();
+    bool moveCursorRight();
+    bool moveCursorLeft();
     void insertChar(char letter);
     bool isCursorAtTheEndOfString();
+    void gotoEndString();
+    void gotoBeginString();
 };
 
 struct Planilha {

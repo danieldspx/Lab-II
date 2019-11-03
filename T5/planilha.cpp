@@ -15,7 +15,11 @@ void InputBox::focus(Celula cell){
     isActive = true;
     cellRefer = cell.pos;
     input = cell.formula;
-    cursor.pos.column = input.size();
+    if(static_cast<int>(input.size()) < dim.width){
+        cursor.pos.column = input.size();
+    } else {
+        gotoEndString();
+    }
 }
 
 void InputBox::defocus(){
@@ -24,19 +28,21 @@ void InputBox::defocus(){
     cursor.pos.column = input.size();
 }
 
-void InputBox::moveCursorRight(){
+bool InputBox::moveCursorRight(){
     if(cursor.pos.column+3 < dim.width){
         if(cursor.pos.column+cursorShiftX+1 <= static_cast<int>(input.size())){
            cursor.pos.column++;
         }
-    } else {
-        if(cursor.pos.column+cursorShiftX+1 <= static_cast<int>(input.size())){
-           cursorShiftX++;
-        }
+    } else if(cursor.pos.column+cursorShiftX+1 <= static_cast<int>(input.size())) {
+        cursorShiftX++;
+    } else {//Is in the right end(->), therefore cannot move
+        return false;
     }
+
+    return true;
 }
 
-void InputBox::moveCursorLeft(){
+bool InputBox::moveCursorLeft(){
     if(cursor.pos.column > 0){
         cursor.pos.column--;
     } else if(cursorShiftX > 0) {
@@ -44,7 +50,11 @@ void InputBox::moveCursorLeft(){
         if(cursorShiftX > 0){
             cursorShiftX--;
         }
+    } else {//Is in the left end(<-), therefore cannot move
+        return false;
     }
+
+    return true;
 }
 
 bool InputBox::isCursorAtTheEndOfString(){
@@ -54,6 +64,17 @@ bool InputBox::isCursorAtTheEndOfString(){
 void InputBox::insertChar(char letter){
     input.insert(cursor.pos.column + cursorShiftX, 1, letter);
     moveCursorRight();
+}
+
+void InputBox::gotoEndString(){
+    for(int i=0; i < static_cast<int>(input.size()); i++){
+        moveCursorRight();
+    }
+}
+
+void InputBox::gotoBeginString(){
+    cursor.pos.column = 0;
+    cursorShiftX = 0;
 }
 
 void Planilha::init(){
@@ -108,7 +129,6 @@ void Planilha::handle_events(){
             handle_key_press(event);
             break;
         default:
-            // cout << "Default" << endl;
             break;
     }
 }
@@ -163,18 +183,12 @@ void Planilha::handle_key_press(caca_event_t ev){
             case CACA_KEY_DELETE:
                 eraseChar(ERASE_FORWARD);
                 break;
-            // case CACA_KEY_CTRL_V:
-            //     cola_linha();
-            //     break;
-            // case CACA_KEY_CTRL_C:
-            //     copia_linha();
-            //     break;
-            // case CACA_KEY_RETURN:
-            //     quebra_linha();
-            //     break;
-            // case CACA_KEY_PAUSE://SAME AS CTRL+S
-            //     salva(filename_output);
-            //     break;
+            case CACA_KEY_PAGEUP:
+                inputBox.gotoBeginString();
+                break;
+            case CACA_KEY_PAGEDOWN:
+                inputBox.gotoEndString();
+                break;
             default:
                 caca_get_event_key_utf8(&ev, letter);
                 hadleCharInput(*letter);
@@ -188,7 +202,7 @@ void Planilha::hadleCharInput(char letter){
     std::string target(1, letter);
     std::smatch match;
     std::regex regExp("[\\./*=^+\\-\\(\\)A-Z\\d+]");
-    if(std::regex_search (target, match, regExp)){
+    if(std::regex_search (target, match, regExp) && inputBox.isActive){
         inputBox.insertChar(letter);
     }
 }
@@ -411,8 +425,15 @@ void Planilha::eraseChar(int direction){
                 s.erase(s.begin() + cursorPosX - 1);
                 inputBox.input = s;
             }
+            if(inputBox.cursor.pos.column <= 2 && inputBox.cursorShiftX > 0){
+                inputBox.cursorShiftX--;
+            } else {
+                inputBox.moveCursorLeft();
+            }
+        } else {
+            inputBox.moveCursorLeft();
         }
-        inputBox.moveCursorLeft();
+        
     } else {//ERASE_FORWARD
         if(!inputBox.isCursorAtTheEndOfString()) {
             string s = inputBox.input;

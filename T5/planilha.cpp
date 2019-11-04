@@ -15,6 +15,8 @@ void InputBox::focus(Celula cell){
     isActive = true;
     cellRefer = cell.pos;
     input = cell.formula;
+    cursor.pos.column = 0;
+    cursorShiftX = 0;
     if(static_cast<int>(input.size()) < dim.width){
         cursor.pos.column = input.size();
     } else {

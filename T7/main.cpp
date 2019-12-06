@@ -8,6 +8,8 @@
 #include <limits>
 #include <algorithm>
 
+using namespace std;
+
 struct Aresta {
   int v;         // vertice destino
   float peso;    // peso da aresta
@@ -92,14 +94,28 @@ struct Grafo {
         for(auto& v: grafo){
             v.second.chave = std::numeric_limits<float>::max(); //Inicializa as chaves com infinito
         }
-        grafo[fonte].chave = 0;
         auto compara = [](Vertice* v1, Vertice* v2) {return v1->chave > v2->chave;};
         Heap<Vertice*, decltype(compara)> heapMin(compara);
+        grafo[fonte].chave = 0;
+
 
         for(auto& v: grafo){
-            heapMin.insere(&v.second);
+            heapMin.insere(&(v.second));
         }
-        
+        heapMin.atualiza();
+        int count = 0;
+        while(!heapMin.vazio() && ++count < 1000){
+            Vertice* u = heapMin.topo();
+            heapMin.remove();
+            for(auto& aresta: u->arestas){
+                Vertice& verticeAdj = grafo.at(aresta.v);
+                if(verticeAdj.chave > u->chave + aresta.peso){
+                    verticeAdj.anterior = u->info;
+                    verticeAdj.chave = u->chave + aresta.peso;
+                    heapMin.atualiza();
+                }
+            }
+        }
     }
 
     void imprime(void){

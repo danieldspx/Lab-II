@@ -408,11 +408,11 @@ void Editor::quebra_linha(){
 }
 
 void Editor::update_title(){
-    if(has_unsaved_work){
-        caca_set_display_title(display, "(unsaved) Editor");
-    } else {
-        caca_set_display_title(display, "Editor");
-    }
+    // if(has_unsaved_work){
+    //     caca_set_display_title(display, "(unsaved) Editor");
+    // } else {
+    //     caca_set_display_title(display, "Editor");
+    // }
 }
 
 void Editor::salva(string filename){
